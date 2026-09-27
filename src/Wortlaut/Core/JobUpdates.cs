@@ -89,6 +89,12 @@ public sealed record TranscriptionResult(JobOutcome Outcome, string MediaPath, s
     /// <summary>faster-whisper exit code, if the process ran to the end.</summary>
     public int? ExitCode { get; init; }
 
+    /// <summary>
+    /// The transcript is complete, but faster-whisper crashed while shutting down (non-zero exit code after
+    /// it reported completion). A known Faster-Whisper-XXL problem; the result is kept.
+    /// </summary>
+    public bool CrashedAfterCompletion => Outcome == JobOutcome.Completed && ExitCode is not (null or 0);
+
     /// <summary>Error details, see <see cref="JobError"/>.</summary>
     public string? Detail { get; init; }
 }

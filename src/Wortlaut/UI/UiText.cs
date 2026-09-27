@@ -158,6 +158,8 @@ internal static class UiText
 
     public static string LogResult(TranscriptionResult result) => result.Outcome switch
     {
+        JobOutcome.Completed when result.CrashedAfterCompletion =>
+            $"Fertig nach {FormatDuration(result.Elapsed)}: {result.TargetPath}. {CrashedAfterCompletionNote(result)}",
         JobOutcome.Completed => $"Fertig nach {FormatDuration(result.Elapsed)}: {result.TargetPath}",
         JobOutcome.Skipped when result.SkipReason == SkipReason.DuplicateTarget =>
             $"Übersprungen: {result.TargetPath} wurde in diesem Lauf schon aus einer anderen Datei erzeugt.",
@@ -174,11 +176,24 @@ internal static class UiText
         {
             JobError.MediaNotFound => $"Fehler: Datei nicht gefunden: {result.Detail}",
             JobError.StartFailed => $"Fehler: faster-whisper konnte nicht gestartet werden: {result.Detail}",
-            JobError.ProcessFailed => $"Fehler: faster-whisper wurde mit Code {result.ExitCode} beendet.{detail}",
+            JobError.ProcessFailed => $"Fehler: faster-whisper wurde mit Code {FormatExitCode(result.ExitCode)} beendet.{detail}",
             JobError.ResultMissing => $"Fehler: faster-whisper hat keine Ergebnisdatei geschrieben.{detail}",
             _ => $"Fehler: {result.Detail}",
         };
     }
+
+    /// <summary>Note for a transcript that is complete although faster-whisper crashed while shutting down.</summary>
+    public static string CrashedAfterCompletionNote(TranscriptionResult result) =>
+        $"Hinweis: faster-whisper ist erst nach dem Schreiben des Ergebnisses abgestürzt (Code {FormatExitCode(result.ExitCode)}, " +
+        "bekanntes Problem beim Beenden). Das Transkript ist vollständig und wurde übernommen.";
+
+    /// <summary>Windows status codes are negative; the hex form (e.g. 0xC0000409) is the one to search for.</summary>
+    public static string FormatExitCode(int? exitCode) => exitCode switch
+    {
+        null => "?",
+        < 0 or > 255 => $"{exitCode} (0x{exitCode:X8})",
+        _ => $"{exitCode}",
+    };
 
     // ----- Messages -----
 

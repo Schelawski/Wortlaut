@@ -123,6 +123,31 @@ internal sealed class FakeWhisperRunner : IWhisperRunner
         return this;
     }
 
+    /// <summary>
+    /// Writes the result, then crashes while shutting down (like Faster-Whisper-XXL with 0xC0000409).
+    /// </summary>
+    /// <param name="reportCompletion">Print the completion lines before crashing.</param>
+    public FakeWhisperRunner WritesResultThenCrashes(int exitCode, bool reportCompletion, string content = "Transkript")
+    {
+        _behaviors.Add(async (request, onOutput, _) =>
+        {
+            var extension = OutputFormats.Get(request.Settings.Format).ProducedExtensions[0];
+            await File.WriteAllTextAsync(Path.Combine(request.OutputDirectory, "job" + extension), content);
+
+            var lastLine = "[19:32.320 --> 19:32.480]  Аминь.";
+            onOutput(new OutputLine(lastLine, IsError: false));
+            if (reportCompletion)
+            {
+                onOutput(new OutputLine($"Subtitles are written to '{request.OutputDirectory}' directory.", IsError: false));
+                lastLine = "Operation finished in:  0:08:32.858 ";
+                onOutput(new OutputLine(lastLine, IsError: false));
+            }
+
+            return new WhisperRunResult(exitCode, lastLine.Trim());
+        });
+        return this;
+    }
+
     /// <summary>Exits with 0 without writing a result.</summary>
     public FakeWhisperRunner SucceedsWithoutResult(string lastLine)
     {

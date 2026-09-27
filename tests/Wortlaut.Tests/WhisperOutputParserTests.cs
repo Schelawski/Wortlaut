@@ -35,6 +35,24 @@ public class WhisperOutputParserTests
         Assert.Equal(TimeSpan.FromSeconds(expectedSeconds), duration);
     }
 
+    [Theory]
+    [InlineData(@"Subtitles are written to 'C:\Projekte\Spracherkennung\Faster-Whisper-XXL\.wortlaut-tmp\b16f8b61bc9d' directory.")]
+    [InlineData("Operation finished in:  0:08:32.858 ")]
+    public void CompletionLinesAreRecognized(string line)
+    {
+        Assert.True(WhisperOutputParser.IsCompletionLine(line));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(null)]
+    [InlineData("Transcription speed: 2.41 audio seconds/s")]
+    [InlineData("[19:32.320 --> 19:32.480]  Operation finished in: сказал он")]
+    public void OtherLinesAreNotCompletion(string? line)
+    {
+        Assert.False(WhisperOutputParser.IsCompletionLine(line));
+    }
+
     [Fact]
     public void ProgressFractionUsesDuration()
     {

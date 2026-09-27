@@ -49,6 +49,15 @@ public class UiTextTests
     }
 
     [Theory]
+    [InlineData(1, "1")]
+    [InlineData(-1073740791, "-1073740791 (0xC0000409)")]
+    [InlineData(null, "?")]
+    public void ExitCodesAreShownWithHexForWindowsStatusCodes(int? exitCode, string expected)
+    {
+        Assert.Equal(expected, UiText.FormatExitCode(exitCode));
+    }
+
+    [Theory]
     [InlineData(@"""D:\Videos\Лекция 12.mp4""", @"D:\Videos\Лекция 12.mp4")] // Explorer "Copy as path"
     [InlineData(@"  D:\Videos\Лекция 12.mp4  ", @"D:\Videos\Лекция 12.mp4")]
     [InlineData(@" ""D:\Videos"" ", @"D:\Videos")]

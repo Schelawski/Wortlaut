@@ -80,7 +80,7 @@ public sealed class TranscriptionJob
                     request.Settings.ExePath,
                     WhisperCommandLine.BuildArguments(request.Settings, jobFile, workDirectory))));
 
-            var tracker = new ProgressTracker(request.KnownDuration, progress);
+            var tracker = new OutputTracker(request.KnownDuration, progress);
             WhisperRunResult run;
             try
             {
@@ -94,7 +94,12 @@ public sealed class TranscriptionJob
             if (cancellationToken.IsCancellationRequested)
                 return Result(JobOutcome.Cancelled);
 
-            if (run.ExitCode != 0)
+            var producedFile = FindProducedFile(workDirectory, request.Settings.Format);
+
+            // Faster-Whisper-XXL sometimes crashes while shutting down (e.g. 0xC0000409 during GPU cleanup),
+            // after it has written all files and reported completion. The transcript is complete then, so it is
+            // kept. Without the completion message a non-zero exit code stays an error: the file may be partial.
+            if (run.ExitCode != 0 && (producedFile is null || !tracker.SawCompletion))
             {
                 return Result(JobOutcome.Failed) with
                 {
@@ -104,7 +109,6 @@ public sealed class TranscriptionJob
                 };
             }
 
-            var producedFile = FindProducedFile(workDirectory, request.Settings.Format);
             if (producedFile is null)
             {
                 return Result(JobOutcome.Failed) with
@@ -226,12 +230,20 @@ public sealed class TranscriptionJob
     }
 
     /// <summary>
-    /// Turns faster-whisper output into <see cref="JobUpdate"/>s. Called on the runner's output threads.
+    /// Turns faster-whisper output into <see cref="JobUpdate"/>s and notices the completion message.
+    /// Called on the runner's output threads.
     /// </summary>
-    private sealed class ProgressTracker(TimeSpan? knownDuration, IProgress<JobUpdate>? progress)
+    private sealed class OutputTracker(TimeSpan? knownDuration, IProgress<JobUpdate>? progress)
     {
         private readonly object _sync = new();
         private TimeSpan? _duration = knownDuration;
+        private bool _sawCompletion;
+
+        /// <summary>True once faster-whisper has reported that all output files are written.</summary>
+        public bool SawCompletion
+        {
+            get { lock (_sync) return _sawCompletion; }
+        }
 
         public void OnOutput(OutputLine line)
         {
@@ -240,6 +252,9 @@ public sealed class TranscriptionJob
             JobProgressUpdate? update = null;
             lock (_sync)
             {
+                if (WhisperOutputParser.IsCompletionLine(line.Text))
+                    _sawCompletion = true;
+
                 if (WhisperOutputParser.TryParseDuration(line.Text, out var duration))
                 {
                     _duration = duration;

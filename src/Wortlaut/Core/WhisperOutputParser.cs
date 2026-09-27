@@ -19,6 +19,17 @@ public static partial class WhisperOutputParser
     [GeneratedRegex(@"Processing audio with duration\s+(?<duration>" + TimePattern + ")")]
     private static partial Regex DurationRegex();
 
+    /// <summary>
+    /// Printed after all output files are written:
+    /// <c>Subtitles are written to '…' directory.</c> and <c>Operation finished in:  0:08:32.858</c>.
+    /// </summary>
+    [GeneratedRegex(@"^\s*(Subtitles are written to\b|Operation finished in:)")]
+    private static partial Regex CompletionRegex();
+
+    /// <summary>True for the lines faster-whisper prints once all output files are written.</summary>
+    public static bool IsCompletionLine(string? line) =>
+        !string.IsNullOrEmpty(line) && CompletionRegex().IsMatch(line);
+
     /// <summary>Tries to read the end time of a segment line.</summary>
     public static bool TryParseSegmentEnd(string? line, out TimeSpan end)
     {

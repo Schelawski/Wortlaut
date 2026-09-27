@@ -155,6 +155,57 @@ public class TranscriptionJobTests
         Assert.Equal(before, FileSnapshot.Take(media));
     }
 
+    [Theory]
+    [InlineData(OutputFormat.Json)]
+    [InlineData(OutputFormat.Text)]
+    public async Task CrashAfterReportedCompletionKeepsTranscript(OutputFormat format)
+    {
+        // Faster-Whisper-XXL sometimes exits with 0xC0000409 (-1073740791) after "Operation finished".
+        using var folder = new TempFolder();
+        var media = folder.CreateMedia(MediaName);
+        var before = FileSnapshot.Take(media);
+        var job = new TranscriptionJob(new FakeWhisperRunner().WritesResultThenCrashes(-1073740791, reportCompletion: true, "Аминь."));
+
+        var result = await job.RunAsync(new TranscriptionRequest(media, TestSettings.Create(format), Overwrite: false), null, CancellationToken.None);
+
+        Assert.Equal(JobOutcome.Completed, result.Outcome);
+        Assert.True(result.CrashedAfterCompletion);
+        Assert.Equal(-1073740791, result.ExitCode);
+        Assert.Equal("Аминь.", File.ReadAllText(result.TargetPath));
+        Assert.False(Directory.Exists(Path.Combine(folder.Path, ".wortlaut-tmp")));
+        Assert.Equal(before, FileSnapshot.Take(media));
+    }
+
+    [Fact]
+    public async Task CrashWithoutCompletionMessageIsAnErrorEvenIfAFileExists()
+    {
+        // Without the completion message the file may be incomplete.
+        using var folder = new TempFolder();
+        var media = folder.CreateMedia(MediaName);
+        var job = new TranscriptionJob(new FakeWhisperRunner().WritesResultThenCrashes(-1073740791, reportCompletion: false));
+
+        var result = await job.RunAsync(new TranscriptionRequest(media, TestSettings.Create(OutputFormat.Json), Overwrite: false), null, CancellationToken.None);
+
+        Assert.Equal(JobOutcome.Failed, result.Outcome);
+        Assert.Equal(JobError.ProcessFailed, result.Error);
+        Assert.False(result.CrashedAfterCompletion);
+        Assert.False(File.Exists(result.TargetPath));
+        Assert.False(Directory.Exists(Path.Combine(folder.Path, ".wortlaut-tmp")));
+    }
+
+    [Fact]
+    public async Task RegularSuccessIsNotMarkedAsCrash()
+    {
+        using var folder = new TempFolder();
+        var media = folder.CreateMedia(MediaName);
+        var job = new TranscriptionJob(new FakeWhisperRunner().Succeeds());
+
+        var result = await job.RunAsync(new TranscriptionRequest(media, TestSettings.Create(), Overwrite: false), null, CancellationToken.None);
+
+        Assert.Equal(JobOutcome.Completed, result.Outcome);
+        Assert.False(result.CrashedAfterCompletion);
+    }
+
     [Fact]
     public async Task SuccessWithoutResultFileIsAnError()
     {

@@ -492,7 +492,12 @@ internal sealed class FolderView : UserControl, IRunView
                     _ => RowStatus.Failed,
                 };
                 row.Fraction = null;
-                row.Detail = finished.Result.Outcome == JobOutcome.Failed ? UiText.ErrorText(finished.Result) : null;
+                row.Detail = finished.Result switch
+                {
+                    { Outcome: JobOutcome.Failed } => UiText.ErrorText(finished.Result),
+                    { CrashedAfterCompletion: true } => UiText.CrashedAfterCompletionNote(finished.Result),
+                    _ => null,
+                };
                 _runFinished = finished.Finished;
                 _runTotal = finished.Total;
                 _log.AppendMessage(UiText.LogResult(finished.Result));
