@@ -133,7 +133,7 @@ internal sealed class SingleFileView : UserControl, IRunView
 
     private void OnFileChanged()
     {
-        _host.Settings.LastFile = _fileBox.Text.Trim();
+        _host.Settings.LastFile = PathInput.Clean(_fileBox.Text);
         _host.SettingsChanged();
         UpdateResultPreview();
     }
@@ -147,7 +147,7 @@ internal sealed class SingleFileView : UserControl, IRunView
             CheckFileExists = true,
         };
 
-        var current = _fileBox.Text.Trim();
+        var current = PathInput.Clean(_fileBox.Text);
         if (File.Exists(current))
         {
             dialog.InitialDirectory = Path.GetDirectoryName(current);
@@ -161,7 +161,7 @@ internal sealed class SingleFileView : UserControl, IRunView
     /// <summary>Shows where the transcript will be written and whether it already exists.</summary>
     private void UpdateResultPreview()
     {
-        var target = TryGetTargetPath(_fileBox.Text.Trim());
+        var target = TryGetTargetPath(PathInput.Clean(_fileBox.Text));
         _resultPathLabel.Text = target ?? string.Empty;
         _toolTip.SetToolTip(_resultPathLabel, target);
 
@@ -191,7 +191,7 @@ internal sealed class SingleFileView : UserControl, IRunView
         if (settings is null)
             return;
 
-        var mediaPath = _fileBox.Text.Trim();
+        var mediaPath = PathInput.Clean(_fileBox.Text);
         if (!File.Exists(mediaPath))
         {
             _host.ShowWarning(UiText.MediaMissing);

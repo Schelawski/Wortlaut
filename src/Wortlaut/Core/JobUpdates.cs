@@ -27,9 +27,6 @@ public sealed record JobProgressUpdate(TimeSpan Position, TimeSpan? Duration) : 
 
 public enum JobMessageKind
 {
-    /// <summary>The transcript already exists and overwriting is off. Detail: transcript path.</summary>
-    SkippedExisting,
-
     /// <summary>A hard link could not be created, the media file was copied instead. Detail: reason.</summary>
     CopiedInsteadOfHardLink,
 

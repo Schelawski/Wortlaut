@@ -48,6 +48,16 @@ public class UiTextTests
         Assert.Equal("large-v2 · cuda · auto · .json", UiText.SettingsSummary(settings with { Language = "auto", Format = OutputFormat.Json }));
     }
 
+    [Theory]
+    [InlineData(@"""D:\Videos\Лекция 12.mp4""", @"D:\Videos\Лекция 12.mp4")] // Explorer "Copy as path"
+    [InlineData(@"  D:\Videos\Лекция 12.mp4  ", @"D:\Videos\Лекция 12.mp4")]
+    [InlineData(@" ""D:\Videos"" ", @"D:\Videos")]
+    [InlineData("", "")]
+    public void PastedPathsAreCleaned(string input, string expected)
+    {
+        Assert.Equal(expected, PathInput.Clean(input));
+    }
+
     [Fact]
     public void FormatNamesContainExtensionFromTheCentralMapping()
     {

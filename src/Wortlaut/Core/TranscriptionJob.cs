@@ -62,10 +62,7 @@ public sealed class TranscriptionJob
             return Result(JobOutcome.Failed) with { Error = JobError.MediaNotFound, Detail = mediaPath };
 
         if (TranscriptionPaths.ShouldSkip(targetPath, request.Overwrite))
-        {
-            progress?.Report(new JobMessageUpdate(JobMessageKind.SkippedExisting, targetPath));
             return Result(JobOutcome.Skipped) with { SkipReason = SkipReason.TargetExists };
-        }
 
         var tempRoot = TranscriptionPaths.GetTempRoot(mediaPath);
         var workDirectory = TranscriptionPaths.GetWorkDirectory(mediaPath, _jobIdFactory());

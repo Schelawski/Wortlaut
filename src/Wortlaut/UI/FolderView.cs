@@ -73,7 +73,7 @@ internal sealed class FolderView : UserControl, IRunView
         };
         _folderBox.Leave += async (_, _) =>
         {
-            if (!string.Equals(_folderBox.Text.Trim(), _loadedFolder, StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(PathInput.Clean(_folderBox.Text), _loadedFolder, StringComparison.OrdinalIgnoreCase))
                 await LoadFolderAsync(reportMissing: false);
         };
         _skipExistingBox.CheckedChanged += (_, _) =>
@@ -269,8 +269,8 @@ internal sealed class FolderView : UserControl, IRunView
             ShowNewFolderButton = false,
         };
 
-        if (Directory.Exists(_folderBox.Text.Trim()))
-            dialog.InitialDirectory = _folderBox.Text.Trim();
+        if (Directory.Exists(PathInput.Clean(_folderBox.Text)))
+            dialog.InitialDirectory = PathInput.Clean(_folderBox.Text);
 
         if (dialog.ShowDialog(this) == DialogResult.OK)
             _ = SetFolderAsync(dialog.SelectedPath);
@@ -281,12 +281,13 @@ internal sealed class FolderView : UserControl, IRunView
         if (_runState == RunState.RunningHere)
             return;
 
+        // Stop reading durations of the previous list. The old source is not disposed here because the
+        // background probes may still observe its token; it holds no timer, so the GC can collect it.
         _loadCancellation?.Cancel();
-        _loadCancellation?.Dispose();
         var cancellation = new CancellationTokenSource();
         _loadCancellation = cancellation;
 
-        var folder = _folderBox.Text.Trim();
+        var folder = PathInput.Clean(_folderBox.Text);
         _loadedFolder = folder;
         _rows.Clear();
         _grid.RowCount = 0;
@@ -414,7 +415,7 @@ internal sealed class FolderView : UserControl, IRunView
         if (settings is null)
             return;
 
-        if (!Directory.Exists(_folderBox.Text.Trim()))
+        if (!Directory.Exists(PathInput.Clean(_folderBox.Text)))
         {
             _host.ShowWarning(UiText.FolderMissing);
             return;

@@ -147,7 +147,6 @@ internal static class UiText
 
     public static string LogMessage(JobMessageUpdate message) => message.Kind switch
     {
-        JobMessageKind.SkippedExisting => $"Transkript ist bereits vorhanden, übersprungen: {message.Detail}",
         JobMessageKind.CopiedInsteadOfHardLink =>
             $"Hardlink nicht möglich ({message.Detail}). Die Datei wird in den Arbeitsordner kopiert.",
         JobMessageKind.CopiedReadOnlyMedia =>

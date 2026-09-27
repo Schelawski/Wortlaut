@@ -37,7 +37,7 @@ internal sealed partial class MainForm : Form, IViewHost
     private readonly List<IRunView> _views = [];
 
     private CancellationTokenSource? _runCancellation;
-    private Task? _runTask;
+    private bool _isRunning;
     private bool _closeAfterRun;
     private bool _initializing = true;
 
@@ -78,7 +78,7 @@ internal sealed partial class MainForm : Form, IViewHost
 
     public IMediaDurationProbe DurationProbe { get; }
 
-    public bool IsRunning => _runTask is not null;
+    public bool IsRunning => _isRunning;
 
     // ----- Layout -----
 
@@ -182,7 +182,7 @@ internal sealed partial class MainForm : Form, IViewHost
 
         _exePathBox.TextChanged += (_, _) =>
         {
-            Settings.ExePath = _exePathBox.Text.Trim();
+            Settings.ExePath = PathInput.Clean(_exePathBox.Text);
             UpdateExeStatus();
             OnWhisperSettingsChanged();
         };
@@ -340,17 +340,17 @@ internal sealed partial class MainForm : Form, IViewHost
 
     public async Task RunExclusiveAsync(IRunView view, Func<CancellationToken, Task> work)
     {
-        if (_runTask is not null)
+        if (_isRunning)
             return;
 
         using var cancellation = new CancellationTokenSource();
+        _isRunning = true;
         _runCancellation = cancellation;
         ApplyRunState(view);
 
         try
         {
-            _runTask = work(cancellation.Token);
-            await _runTask;
+            await work(cancellation.Token);
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
         {
@@ -362,7 +362,7 @@ internal sealed partial class MainForm : Form, IViewHost
         }
         finally
         {
-            _runTask = null;
+            _isRunning = false;
             _runCancellation = null;
             ApplyRunState(null);
         }
@@ -386,7 +386,7 @@ internal sealed partial class MainForm : Form, IViewHost
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
-        if (_runTask is not null)
+        if (_isRunning)
         {
             // Never leave faster-whisper running in the background: cancel, wait for the cleanup, then close.
             e.Cancel = true;

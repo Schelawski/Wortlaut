@@ -96,16 +96,16 @@ public class TranscriptionJobTests
         var media = folder.CreateMedia(MediaName);
         var target = folder.CreateFile("Лекция 12 — Медитация и дыхание.txt", "alt");
         var runner = new FakeWhisperRunner().Succeeds("neu");
-        var progress = new CollectingProgress<JobUpdate>();
         var job = new TranscriptionJob(runner);
 
-        var result = await job.RunAsync(new TranscriptionRequest(media, TestSettings.Create(), Overwrite: false), progress, CancellationToken.None);
+        var result = await job.RunAsync(new TranscriptionRequest(media, TestSettings.Create(), Overwrite: false), null, CancellationToken.None);
 
         Assert.Equal(JobOutcome.Skipped, result.Outcome);
         Assert.Equal(SkipReason.TargetExists, result.SkipReason);
+        Assert.Equal(target, result.TargetPath);
         Assert.Empty(runner.Requests);
         Assert.Equal("alt", File.ReadAllText(target));
-        Assert.Contains(progress.Items, u => u is JobMessageUpdate { Kind: JobMessageKind.SkippedExisting });
+        Assert.False(Directory.Exists(Path.Combine(folder.Path, ".wortlaut-tmp")));
     }
 
     [Fact]
