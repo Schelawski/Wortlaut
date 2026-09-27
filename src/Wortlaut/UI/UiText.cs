@@ -139,6 +139,12 @@ internal static class UiText
 
     public static string LogBulkItem(int position, int total, string fileName) => $"── [{position}/{total}] {fileName} ──";
 
+    public static string LogBulkSummary(BulkSummary summary) =>
+        $"Zusammenfassung: {summary.Completed} fertig · {summary.Skipped} übersprungen · " +
+        $"{summary.Failed} Fehler · {summary.Cancelled} abgebrochen · Gesamtdauer {FormatDuration(summary.Elapsed)}";
+
+    public static string LogFolderError(string folder, string reason) => $"Ordner kann nicht gelesen werden: {folder} ({reason})";
+
     public static string LogMessage(JobMessageUpdate message) => message.Kind switch
     {
         JobMessageKind.SkippedExisting => $"Transkript ist bereits vorhanden, übersprungen: {message.Detail}",
@@ -157,7 +163,7 @@ internal static class UiText
         JobOutcome.Skipped when result.SkipReason == SkipReason.DuplicateTarget =>
             $"Übersprungen: {result.TargetPath} wurde in diesem Lauf schon aus einer anderen Datei erzeugt.",
         JobOutcome.Skipped => $"Übersprungen, Transkript vorhanden: {result.TargetPath}",
-        JobOutcome.Cancelled => "Abgebrochen.",
+        JobOutcome.Cancelled => $"Abgebrochen: {Path.GetFileName(result.MediaPath)}",
         _ => ErrorText(result),
     };
 

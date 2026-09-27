@@ -31,7 +31,9 @@ internal sealed partial class MainForm : Form, IViewHost
     private readonly ToolStripStatusLabel _savedLabel = new() { Spring = true, TextAlign = ContentAlignment.MiddleRight };
 
     private readonly SingleFileView _singleFileView;
+    private readonly FolderView _folderView;
     private readonly TabPage _singleFilePage = new(UiText.SingleFileTab);
+    private readonly TabPage _folderPage = new(UiText.FolderTab);
     private readonly List<IRunView> _views = [];
 
     private CancellationTokenSource? _runCancellation;
@@ -54,7 +56,9 @@ internal sealed partial class MainForm : Form, IViewHost
         MinimumSize = new Size(760, 600);
 
         _singleFileView = new SingleFileView(this);
+        _folderView = new FolderView(this);
         _views.Add(_singleFileView);
+        _views.Add(_folderView);
         BuildLayout();
         ResumeLayout(false);
         PerformLayout();
@@ -90,7 +94,10 @@ internal sealed partial class MainForm : Form, IViewHost
 
         _singleFilePage.Controls.Add(_singleFileView);
         _singleFilePage.UseVisualStyleBackColor = true;
+        _folderPage.Controls.Add(_folderView);
+        _folderPage.UseVisualStyleBackColor = true;
         _tabs.TabPages.Add(_singleFilePage);
+        _tabs.TabPages.Add(_folderPage);
         _tabs.Margin = new Padding(3, 10, 3, 3);
         root.Controls.Add(_tabs, 0, 1);
 
@@ -433,13 +440,22 @@ internal sealed partial class MainForm : Form, IViewHost
     private static string? GetDroppedPath(DragEventArgs e) =>
         e.Data?.GetData(DataFormats.FileDrop) is string[] { Length: 1 } paths ? paths[0] : null;
 
+    /// <summary>A media file (single-file tab) or a folder (folder tab).</summary>
     private static bool IsAcceptedDrop(string path) =>
-        File.Exists(path) && MediaFiles.IsSupported(path);
+        (File.Exists(path) && MediaFiles.IsSupported(path)) || Directory.Exists(path);
 
-    private void HandleDroppedPath(string path)
+    private async void HandleDroppedPath(string path)
     {
-        _tabs.SelectedTab = _singleFilePage;
-        _singleFileView.SetMediaFile(path);
+        if (Directory.Exists(path))
+        {
+            _tabs.SelectedTab = _folderPage;
+            await _folderView.SetFolderAsync(path);
+        }
+        else
+        {
+            _tabs.SelectedTab = _singleFilePage;
+            _singleFileView.SetMediaFile(path);
+        }
     }
 
     protected override void Dispose(bool disposing)
