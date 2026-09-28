@@ -198,12 +198,13 @@ internal sealed class FailingHardLinker : IHardLinker
 
 internal static class TestSettings
 {
-    public static WhisperSettings Create(OutputFormat format = OutputFormat.Text, string language = "ru") => new()
+    public static WhisperSettings Create(OutputFormat format = OutputFormat.Text, string language = "ru", bool wholeSentences = true) => new()
     {
         ExePath = @"C:\Tools\Faster-Whisper-XXL\faster-whisper-xxl.exe",
         Model = "large-v2",
         Device = "cuda",
         Language = language,
         Format = format,
+        WholeSentences = wholeSentences,
     };
 }

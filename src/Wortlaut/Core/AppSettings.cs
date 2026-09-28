@@ -17,6 +17,9 @@ public sealed class AppSettings
 
     public OutputFormat Format { get; set; } = OutputFormat.Text;
 
+    /// <summary>Keep sentences whole (<c>--sentence</c>). On by default, also for older settings files.</summary>
+    public bool WholeSentences { get; set; } = true;
+
     /// <summary>Last file chosen in the single-file mode.</summary>
     public string LastFile { get; set; } = string.Empty;
 
@@ -36,6 +39,7 @@ public sealed class AppSettings
         Device = Device.Trim(),
         Language = Language.Trim(),
         Format = Format,
+        WholeSentences = WholeSentences,
     };
 
     /// <summary>Replaces missing values (e.g. from a hand-edited file) with defaults.</summary>

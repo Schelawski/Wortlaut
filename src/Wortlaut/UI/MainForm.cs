@@ -18,6 +18,8 @@ internal sealed partial class MainForm : Form, IViewHost
     private readonly ComboBox _deviceBox = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 90 };
     private readonly ComboBox _languageBox = new() { DropDownStyle = ComboBoxStyle.DropDown, Width = 200 };
     private readonly ComboBox _formatBox = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 160 };
+    private readonly CheckBox _wholeSentencesBox = new() { Text = UiText.WholeSentences, AutoSize = true, Anchor = AnchorStyles.Left };
+    private readonly ToolTip _toolTip = new() { AutoPopDelay = 15000 };
     private readonly GroupBox _settingsGroup = new()
     {
         Text = UiText.SettingsGroup,
@@ -125,8 +127,8 @@ internal sealed partial class MainForm : Form, IViewHost
         grid.Controls.Add(_browseExeButton, 1, 1);
         grid.Controls.Add(_exeStatus, 2, 1);
 
-        var options = new TableLayoutPanel { AutoSize = true, ColumnCount = 4, RowCount = 2, Margin = new Padding(0, 4, 0, 0) };
-        for (var i = 0; i < 4; i++)
+        var options = new TableLayoutPanel { AutoSize = true, ColumnCount = 5, RowCount = 2, Margin = new Padding(0, 4, 0, 0) };
+        for (var i = 0; i < 5; i++)
             options.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         options.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         options.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -144,6 +146,9 @@ internal sealed partial class MainForm : Form, IViewHost
             fields[column].Box.Margin = new Padding(3, 3, 12, 3);
             options.Controls.Add(fields[column].Box, column, 1);
         }
+
+        // Next to the format, because it only affects some formats (see tooltip).
+        options.Controls.Add(_wholeSentencesBox, fields.Length, 1);
 
         grid.Controls.Add(options, 0, 2);
         grid.SetColumnSpan(options, 3);
@@ -178,6 +183,9 @@ internal sealed partial class MainForm : Form, IViewHost
             _formatBox.Items.Add(new FormatItem(info));
         _formatBox.SelectedIndex = OutputFormats.All.ToList().FindIndex(info => info.Format == Settings.Format);
 
+        _wholeSentencesBox.Checked = Settings.WholeSentences;
+        _toolTip.SetToolTip(_wholeSentencesBox, UiText.WholeSentencesTooltip);
+
         UpdateExeStatus();
 
         _exePathBox.TextChanged += (_, _) =>
@@ -206,6 +214,11 @@ internal sealed partial class MainForm : Form, IViewHost
         {
             if (_formatBox.SelectedItem is FormatItem item)
                 Settings.Format = item.Info.Format;
+            OnWhisperSettingsChanged();
+        };
+        _wholeSentencesBox.CheckedChanged += (_, _) =>
+        {
+            Settings.WholeSentences = _wholeSentencesBox.Checked;
             OnWhisperSettingsChanged();
         };
     }
@@ -463,6 +476,7 @@ internal sealed partial class MainForm : Form, IViewHost
         if (disposing)
         {
             _saveTimer.Dispose();
+            _toolTip.Dispose();
             _runCancellation?.Dispose();
         }
 

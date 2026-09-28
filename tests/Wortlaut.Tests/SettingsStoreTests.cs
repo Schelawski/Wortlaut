@@ -35,6 +35,7 @@ public class SettingsStoreTests
             Device = "cpu",
             Language = "auto",
             Format = OutputFormat.Srt,
+            WholeSentences = false,
             LastFile = @"D:\Videos\Лекция 12 — Медитация.mp4",
             LastFolder = @"D:\Videos\Satsang 2026-09",
             IncludeSubfolders = true,
@@ -95,6 +96,16 @@ public class SettingsStoreTests
     }
 
     [Fact]
+    public void OlderFileWithoutWholeSentencesTurnsThemOn()
+    {
+        using var folder = new TempFolder();
+        folder.CreateFile("Wortlaut.settings.json", """{ "Model": "large-v2", "Format": "Text", "SkipExisting": true }""");
+        var store = new SettingsStore(folder.Path, Path.Combine(folder.Path, "appdata"));
+
+        Assert.True(store.Load().WholeSentences);
+    }
+
+    [Fact]
     public void NewerFileWinsWhenBothLocationsHaveOne()
     {
         using var folder = new TempFolder();
@@ -111,7 +122,7 @@ public class SettingsStoreTests
     [Fact]
     public void ToWhisperSettingsTrimsValues()
     {
-        var settings = new AppSettings { ExePath = @" C:\fw\faster-whisper-xxl.exe ", Model = " large-v3 ", Language = " de ", Format = OutputFormat.Vtt };
+        var settings = new AppSettings { ExePath = @" C:\fw\faster-whisper-xxl.exe ", Model = " large-v3 ", Language = " de ", Format = OutputFormat.Vtt, WholeSentences = false };
 
         var whisper = settings.ToWhisperSettings();
 
@@ -119,6 +130,7 @@ public class SettingsStoreTests
         Assert.Equal("large-v3", whisper.Model);
         Assert.Equal("de", whisper.Language);
         Assert.Equal(OutputFormat.Vtt, whisper.Format);
+        Assert.False(whisper.WholeSentences);
     }
 
     [Fact]

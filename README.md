@@ -51,9 +51,10 @@ The user interface is in German.
    | Gerät    | `cuda` (default), `cpu`                                                        |
    | Sprache  | Russisch (ru, default), Deutsch (de), Englisch (en), Automatisch erkennen, or type any other language code |
    | Format   | Text (.txt, default), JSON (.json), Untertitel (.srt), WebVTT (.vtt)           |
+   | Ganze Sätze | On (default): every segment starts with a new sentence and sentences are not cut (`--sentence`). Applies to Text, SRT and VTT; JSON keeps Whisper's original segments. |
 
-   "Text" is plain text without timestamps. The status bar at the bottom shows the active settings,
-   e.g. `large-v2 · cuda · ru · .txt`.
+   "Text" is plain text without timestamps (with "Ganze Sätze": one sentence per line). The status bar
+   at the bottom shows the active settings, e.g. `large-v2 · cuda · ru · .txt`.
 
 ### Tab "Einzelne Datei" (single file)
 

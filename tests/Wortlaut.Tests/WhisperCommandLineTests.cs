@@ -13,8 +13,26 @@ public class WhisperCommandLineTests
         var arguments = WhisperCommandLine.BuildArguments(TestSettings.Create(), Input, OutputDir);
 
         Assert.Equal(
+            ["--model", "large-v2", "--device", "cuda", "--output_format", "text", "--language", "ru", "--sentence", "--output_dir", OutputDir, Input],
+            arguments);
+    }
+
+    [Fact]
+    public void WholeSentencesCanBeTurnedOff()
+    {
+        var arguments = WhisperCommandLine.BuildArguments(TestSettings.Create(wholeSentences: false), Input, OutputDir);
+
+        Assert.DoesNotContain("--sentence", arguments);
+        Assert.Equal(
             ["--model", "large-v2", "--device", "cuda", "--output_format", "text", "--language", "ru", "--output_dir", OutputDir, Input],
             arguments);
+    }
+
+    [Fact]
+    public void WholeSentencesAreOnByDefault()
+    {
+        Assert.True(new WhisperSettings().WholeSentences);
+        Assert.True(new AppSettings().WholeSentences);
     }
 
     [Theory]
@@ -28,7 +46,7 @@ public class WhisperCommandLineTests
 
         Assert.DoesNotContain("--language", arguments);
         Assert.Equal(
-            ["--model", "large-v2", "--device", "cuda", "--output_format", "text", "--output_dir", OutputDir, Input],
+            ["--model", "large-v2", "--device", "cuda", "--output_format", "text", "--sentence", "--output_dir", OutputDir, Input],
             arguments);
     }
 

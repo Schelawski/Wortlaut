@@ -33,6 +33,12 @@ public sealed record WhisperSettings
 
     public OutputFormat Format { get; init; } = OutputFormat.Text;
 
+    /// <summary>
+    /// Start every segment with a new sentence and keep sentences whole (<c>--sentence</c>).
+    /// Faster-Whisper-XXL applies this to Text, SRT and VTT; JSON keeps the original segments.
+    /// </summary>
+    public bool WholeSentences { get; init; } = true;
+
     /// <summary>True when faster-whisper should detect the language itself.</summary>
     public bool IsAutoLanguage =>
         string.IsNullOrWhiteSpace(Language)

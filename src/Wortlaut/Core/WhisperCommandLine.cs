@@ -25,6 +25,9 @@ public static class WhisperCommandLine
             arguments.Add(settings.Language.Trim());
         }
 
+        if (settings.WholeSentences)
+            arguments.Add("--sentence");
+
         arguments.Add("--output_dir");
         arguments.Add(outputDirectory);
 

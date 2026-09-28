@@ -20,6 +20,10 @@ internal static class UiText
     public const string DeviceLabel = "Gerät";
     public const string LanguageLabel = "Sprache";
     public const string FormatLabel = "Format";
+    public const string WholeSentences = "Ganze Sätze";
+    public const string WholeSentencesTooltip =
+        "Jedes Segment beginnt mit einem neuen Satz, Sätze werden nicht zerschnitten (--sentence).\n" +
+        "Wirkt bei Text, SRT und VTT. JSON behält die ursprünglichen Segmente von Whisper.";
     public const string ExeDialogTitle = "faster-whisper-xxl.exe auswählen";
     public const string ExeDialogFilter = "faster-whisper-xxl.exe|faster-whisper-xxl.exe|Programme (*.exe)|*.exe";
 
