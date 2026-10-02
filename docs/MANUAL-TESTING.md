@@ -57,7 +57,16 @@ Automated tests cover the core with a fake runner. These manual checks cover the
 | Start a transcription and close the window while it runs. | Question "Eine Transkription läuft noch. Abbrechen und Wortlaut beenden?". **Nein** keeps it running; **Ja** cancels, cleans up and closes. |
 | Create an empty folder `.wortlaut-tmp\x` in the test folder and click **Aktualisieren**. | Log shows a note about a leftover work folder. Wortlaut does not delete it. |
 
-## 6. Settings are remembered
+## 6. Graphics card
+
+| Step | Expected |
+|------|----------|
+| Click **Prüfen…** next to the device box. | Window "Grafikkarte". After a few seconds: on a PC with an NVIDIA card **NVIDIA-Grafikkarte gefunden – schnelle Erkennung** with name and memory, suggestion `cuda` + `large-v2`; without one **Keine passende Grafikkarte – Erkennung über den Prozessor (langsamer)**, suggestion `cpu` + `large-v3-turbo`. |
+| Click **Vorschlag übernehmen**. | Device and model in the main window change; the status bar shows the new settings. |
+| Set the device to `cuda` on a PC without an NVIDIA card (or simulate: start Wortlaut from a command prompt after `set CUDA_VISIBLE_DEVICES=-1`) and transcribe a file. | The log shows "Die Grafikkarte konnte nicht verwendet werden – keine passende NVIDIA-Grafikkarte gefunden" with the CUDA error line. A question offers to switch to `cpu`; **Ja** changes the device. |
+| Same with a folder of three files. | The run stops after the first file; the log says the remaining files were not processed. The question appears once. |
+
+## 7. Settings are remembered
 
 | Step | Expected |
 |------|----------|

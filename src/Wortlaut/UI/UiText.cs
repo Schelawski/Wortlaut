@@ -1,4 +1,5 @@
 using Wortlaut.Core;
+using Wortlaut.Core.Gpu;
 
 namespace Wortlaut.UI;
 
@@ -186,6 +187,12 @@ internal static class UiText
         $"Итог: готово: {summary.Completed} · пропущено: {summary.Skipped} · " +
         $"ошибок: {summary.Failed} · отменено: {summary.Cancelled} · общее время: {FormatDuration(summary.Elapsed)}");
 
+    public static string LogBulkStoppedByCuda => L(
+        "Ordner-Transkription angehalten: Die Grafikkarte kann nicht verwendet werden, jede weitere Datei würde ebenso " +
+        "scheitern. Die übrigen Dateien wurden nicht bearbeitet.",
+        "Расшифровка папки остановлена: видеокарту нельзя использовать, и каждый следующий файл завершился бы " +
+        "той же ошибкой. Остальные файлы не обработаны.");
+
     public static string LogFolderError(string folder, string reason) =>
         L($"Ordner kann nicht gelesen werden: {folder} ({reason})", $"Не удаётся прочитать папку: {folder} ({reason})");
 
@@ -232,6 +239,13 @@ internal static class UiText
             ? string.Empty
             : L($" Letzte Meldung: {result.Detail}", $" Последнее сообщение: {result.Detail}");
         var exitCode = FormatExitCode(result.ExitCode);
+
+        if (result.CudaProblem != CudaProblem.None)
+        {
+            return L(
+                $"Fehler: Die Grafikkarte konnte nicht verwendet werden – {CudaProblemShort(result.CudaProblem)} (Code {exitCode}).{detail}",
+                $"Ошибка: не удалось использовать видеокарту – {CudaProblemShort(result.CudaProblem)} (код {exitCode}).{detail}");
+        }
 
         return result.Error switch
         {
@@ -346,6 +360,137 @@ internal static class UiText
         "das kann eine Weile dauern, ohne dass ein Fortschritt angezeigt wird.",
         $"Примечание: «{name}» – неизвестная модель. Если её нет, faster-whisper сам загрузит её при первом запуске – " +
         "это может занять время без отображения прогресса.");
+
+    // ----- Graphics card -----
+
+    public static string GpuCheckButton => L("Prüfen…", "Проверить…");
+
+    public static string GpuCheckTooltip => L(
+        "Prüft, ob eine passende NVIDIA-Grafikkarte vorhanden ist, und schlägt Gerät und Modell vor.",
+        "Проверяет, есть ли подходящая видеокарта NVIDIA, и предлагает устройство и модель.");
+
+    public static string GpuTitle => L("Grafikkarte", "Видеокарта");
+
+    public static string GpuIntro => L(
+        "Mit einer NVIDIA-Grafikkarte erkennt Wortlaut Sprache um ein Vielfaches schneller als mit dem Prozessor. " +
+        "Wortlaut prüft, ob eine passende Karte vorhanden ist, und schlägt die richtigen Einstellungen vor.",
+        "С видеокартой NVIDIA Wortlaut распознаёт речь во много раз быстрее, чем с процессором. " +
+        "Wortlaut проверит, есть ли подходящая видеокарта, и предложит нужные настройки.");
+
+    public static string GpuChecking => L("Prüfe die Grafikkarte …", "Проверка видеокарты…");
+    public static string GpuApply => L("Vorschlag übernehmen", "Применить");
+    public static string GpuRecheck => L("Erneut prüfen", "Проверить снова");
+    public static string GpuApplied => L("Übernommen. Sie können die Einstellungen jederzeit selbst ändern.", "Применено. Настройки можно в любой момент изменить вручную.");
+    public static string GpuAlreadyApplied => L("Ihre Einstellungen passen bereits.", "Ваши настройки уже подходят.");
+
+    public static string GpuHeadline(GpuVerdict verdict) => verdict switch
+    {
+        GpuVerdict.Cuda => L("NVIDIA-Grafikkarte gefunden – schnelle Erkennung", "Найдена видеокарта NVIDIA – быстрое распознавание"),
+        GpuVerdict.CudaLowMemory => L("NVIDIA-Grafikkarte gefunden – wenig Grafikspeicher", "Найдена видеокарта NVIDIA – мало видеопамяти"),
+        GpuVerdict.Cpu => L(
+            "Keine passende Grafikkarte – Erkennung über den Prozessor (langsamer)",
+            "Подходящей видеокарты нет – распознавание на процессоре (медленнее)"),
+        _ => L("Die Grafikkarte konnte nicht geprüft werden", "Не удалось проверить видеокарту"),
+    };
+
+    public static string GpuBadge(GpuVerdict verdict) => verdict switch
+    {
+        GpuVerdict.Cuda => L("schnell", "быстро"),
+        GpuVerdict.CudaLowMemory => L("wenig Speicher", "мало памяти"),
+        GpuVerdict.Cpu => L("langsamer", "медленнее"),
+        _ => L("unbekannt", "неизвестно"),
+    };
+
+    /// <summary>"NVIDIA GeForce GTX 1650 · 4 GB Grafikspeicher".</summary>
+    public static string GpuDescription(GpuInfo gpu)
+    {
+        if (gpu.MemoryMiB is not { } mib)
+            return gpu.Name;
+
+        // Graphics memory is sold in whole gigabytes: "4 GB", not "4,00 GB".
+        var culture = System.Globalization.CultureInfo.GetCultureInfo(Language == UiLanguage.Russian ? "ru-RU" : "de-DE");
+        var gigabytes = (mib / 1024d).ToString("0.#", culture);
+        return L($"{gpu.Name} · {gigabytes} GB Grafikspeicher", $"{gpu.Name} · {gigabytes} ГБ видеопамяти");
+    }
+
+    public static string GpuExplanation(GpuRecommendation recommendation) => recommendation.Verdict switch
+    {
+        GpuVerdict.Cuda => L(
+            $"Empfohlen: Gerät „{recommendation.Device}“ (Grafikkarte) mit dem Modell „{recommendation.Model}“ – sehr genau und schnell.",
+            $"Рекомендуется: устройство «{recommendation.Device}» (видеокарта) и модель «{recommendation.Model}» – очень точно и быстро."),
+        GpuVerdict.CudaLowMemory => L(
+            "Die Karte hat weniger als 4 GB Grafikspeicher. Die großen Modelle passen eventuell nicht hinein. " +
+            $"Empfohlen: Gerät „{recommendation.Device}“ mit dem kleineren Modell „{recommendation.Model}“ – fast so genau.",
+            "У видеокарты меньше 4 ГБ видеопамяти. Большие модели могут в неё не поместиться. " +
+            $"Рекомендуется: устройство «{recommendation.Device}» и модель поменьше «{recommendation.Model}» – почти так же точно."),
+        GpuVerdict.Cpu => L(
+            "Die Erkennung funktioniert trotzdem, dauert über den Prozessor aber deutlich länger. " +
+            $"Empfohlen: Gerät „{recommendation.Device}“ (Prozessor) mit dem schnelleren Modell „{recommendation.Model}“.",
+            "Распознавание всё равно работает, но на процессоре занимает заметно больше времени. " +
+            $"Рекомендуется: устройство «{recommendation.Device}» (процессор) и более быстрая модель «{recommendation.Model}»."),
+        _ => L(
+            "faster-whisper hat keine verwertbare Antwort gegeben. Ihre Einstellungen bleiben unverändert.",
+            "faster-whisper не дал понятного ответа. Ваши настройки не изменены."),
+    };
+
+    public static string GpuNoNvidiaSmi => L(
+        "Name und Grafikspeicher der Karte sind nicht bekannt (nvidia-smi nicht gefunden).",
+        "Название и объём видеопамяти неизвестны (nvidia-smi не найден).");
+
+    public static string GpuCurrentSettings(string device, string model) =>
+        L($"Aktuell eingestellt: {device} · {model}", $"Сейчас выбрано: {device} · {model}");
+
+    public static string GpuModelNotDownloaded(string model) => L(
+        $"Das Modell „{model}“ ist noch nicht heruntergeladen. Wortlaut bietet es vor der ersten Transkription zum Download an.",
+        $"Модель «{model}» ещё не загружена. Wortlaut предложит загрузить её перед первой расшифровкой.");
+
+    /// <summary>Short reason for the log, e.g. "keine passende NVIDIA-Grafikkarte gefunden".</summary>
+    public static string CudaProblemShort(CudaProblem problem) => problem switch
+    {
+        CudaProblem.NoDevice => L("keine passende NVIDIA-Grafikkarte gefunden", "подходящая видеокарта NVIDIA не найдена"),
+        CudaProblem.DriverTooOld => L("der Grafiktreiber ist zu alt", "драйвер видеокарты устарел"),
+        CudaProblem.OutOfMemory => L("der Grafikspeicher reicht nicht aus", "не хватает видеопамяти"),
+        CudaProblem.LibraryMissing => L("eine CUDA-Bibliothek fehlt", "отсутствует библиотека CUDA"),
+        _ => L("CUDA-Fehler", "ошибка CUDA"),
+    };
+
+    /// <summary>Explanation after a run failed because of the graphics card. Followed by a yes/no question.</summary>
+    public static string CudaProblemMessage(CudaProblem problem) => problem switch
+    {
+        CudaProblem.NoDevice => L(
+            "Die Grafikkarte konnte nicht verwendet werden: Es wurde keine passende NVIDIA-Grafikkarte gefunden.",
+            "Не удалось использовать видеокарту: подходящая видеокарта NVIDIA не найдена."),
+        CudaProblem.DriverTooOld => L(
+            "Die Grafikkarte konnte nicht verwendet werden: Der Grafiktreiber ist zu alt.\n\n" +
+            "Bitte den NVIDIA-Grafiktreiber aktualisieren (über die NVIDIA App oder www.nvidia.com/drivers) und Windows neu starten.",
+            "Не удалось использовать видеокарту: драйвер видеокарты устарел.\n\n" +
+            "Обновите драйвер NVIDIA (через приложение NVIDIA или www.nvidia.com/drivers) и перезагрузите Windows."),
+        CudaProblem.OutOfMemory => L(
+            "Die Grafikkarte konnte nicht verwendet werden: Der Grafikspeicher reicht für dieses Modell nicht aus.",
+            "Не удалось использовать видеокарту: для этой модели не хватает видеопамяти."),
+        CudaProblem.LibraryMissing => L(
+            "Die Grafikkarte konnte nicht verwendet werden: Eine CUDA-Bibliothek von faster-whisper fehlt oder lässt sich nicht laden.\n\n" +
+            "Meist hilft es, den NVIDIA-Grafiktreiber zu aktualisieren. Sonst Faster-Whisper-XXL neu einrichten.",
+            "Не удалось использовать видеокарту: библиотека CUDA для faster-whisper отсутствует или не загружается.\n\n" +
+            "Обычно помогает обновление драйвера NVIDIA. Если нет – установите Faster-Whisper-XXL заново."),
+        _ => L(
+            "Die Grafikkarte konnte nicht verwendet werden (CUDA-Fehler).\n\nOft hilft es, den NVIDIA-Grafiktreiber zu aktualisieren.",
+            "Не удалось использовать видеокарту (ошибка CUDA).\n\nЧасто помогает обновление драйвера NVIDIA."),
+    };
+
+    public static string CudaSwitchToCpuQuestion => L(
+        "Auf „cpu“ (Prozessor) umstellen? Die Erkennung funktioniert dann, dauert aber deutlich länger. " +
+        "Sie können das später jederzeit wieder ändern.",
+        "Переключиться на «cpu» (процессор)? Распознавание будет работать, но заметно медленнее. " +
+        "Это можно в любой момент изменить обратно.");
+
+    public static string CudaSwitchModelQuestion(string model) => L(
+        $"Auf das kleinere Modell „{model}“ umstellen? Es braucht deutlich weniger Grafikspeicher und ist fast so genau.",
+        $"Переключиться на модель поменьше «{model}»? Ей нужно намного меньше видеопамяти, а точность почти та же.");
+
+    public static string CudaRemainingNotProcessed => L(
+        "Die übrigen Dateien des Ordners wurden nicht bearbeitet.",
+        "Остальные файлы папки не обработаны.");
 
     // ----- Setup (download Faster-Whisper-XXL) -----
 

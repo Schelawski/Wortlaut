@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using Wortlaut.Core;
+using Wortlaut.Core.Gpu;
 using Wortlaut.Core.Models;
 using Wortlaut.Core.Setup;
 
@@ -18,11 +19,13 @@ internal sealed partial class MainForm : Form, IViewHost
     private readonly Button _browseExeButton = UiStyle.CreateButton(UiText.Browse);
     private readonly Button _setupButton = UiStyle.CreateButton(UiText.SetUp);
     private readonly Button _modelsButton = UiStyle.CreateButton(UiText.ModelsButton);
+    private readonly Button _gpuButton = UiStyle.CreateButton(UiText.GpuCheckButton);
     private readonly StatusBadge _exeStatus = new() { Anchor = AnchorStyles.Left, Margin = new Padding(6, 3, 3, 3) };
     private readonly ComboBox _modelBox = new() { DropDownStyle = ComboBoxStyle.DropDown, Width = 135 };
-    private readonly ComboBox _deviceBox = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 90 };
-    private readonly ComboBox _languageBox = new() { DropDownStyle = ComboBoxStyle.DropDown, Width = 175 };
-    private readonly ComboBox _formatBox = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 140 };
+    // Narrow boxes keep the settings in one line; the opened lists are as wide as their longest entry (see FitDropDownWidth).
+    private readonly ComboBox _deviceBox = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 72 };
+    private readonly ComboBox _languageBox = new() { DropDownStyle = ComboBoxStyle.DropDown, Width = 145 };
+    private readonly ComboBox _formatBox = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 120 };
     private readonly CheckBox _wholeSentencesBox = new() { Text = UiText.WholeSentences, AutoSize = true, Anchor = AnchorStyles.Left };
     private readonly ToolTip _toolTip = new() { AutoPopDelay = 15000 };
     private readonly GroupBox _settingsGroup = new()
@@ -45,6 +48,7 @@ internal sealed partial class MainForm : Form, IViewHost
     private readonly List<IRunView> _views = [];
 
     private CancellationTokenSource? _runCancellation;
+    private (TranscriptionResult Result, bool RemainingNotProcessed)? _pendingCudaProblem;
     private bool _isRunning;
     private bool _closeAfterRun;
     private bool _initializing = true;
@@ -220,17 +224,8 @@ internal sealed partial class MainForm : Form, IViewHost
         options.Resize += (_, _) => FitHeight();
         options.ControlAdded += (_, _) => FitHeight();
 
-        // "Modelle…" right next to the model box.
-        var modelCell = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0) };
-        _modelBox.Margin = new Padding(3, 3, 3, 3);
-        _modelsButton.Margin = new Padding(0, 2, 3, 2);
-        _modelsButton.MinimumSize = new Size(0, 0);
-        _modelsButton.Padding = new Padding(6, 0, 6, 0);
-        modelCell.Controls.Add(_modelBox);
-        modelCell.Controls.Add(_modelsButton);
-
-        options.Controls.Add(Field(UiText.ModelLabel, modelCell));
-        options.Controls.Add(Field(UiText.DeviceLabel, _deviceBox));
+        options.Controls.Add(Field(UiText.ModelLabel, WithButton(_modelBox, _modelsButton)));
+        options.Controls.Add(Field(UiText.DeviceLabel, WithButton(_deviceBox, _gpuButton)));
         options.Controls.Add(Field(UiText.LanguageLabel, _languageBox));
         options.Controls.Add(Field(UiText.FormatLabel, _formatBox));
         // Next to the format, because it only affects some formats (see tooltip).
@@ -240,6 +235,19 @@ internal sealed partial class MainForm : Form, IViewHost
         grid.Controls.Add(options, 0, 2);
         grid.SetColumnSpan(options, 4);
         return grid;
+    }
+
+    /// <summary>A combo box with a small button right next to it, e.g. "Modelle…" next to the model box.</summary>
+    private static FlowLayoutPanel WithButton(ComboBox box, Button button)
+    {
+        var cell = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0) };
+        box.Margin = new Padding(3, 3, 3, 3);
+        button.Margin = new Padding(0, 2, 3, 2);
+        button.MinimumSize = new Size(0, 0);
+        button.Padding = new Padding(6, 0, 6, 0);
+        cell.Controls.Add(box);
+        cell.Controls.Add(button);
+        return cell;
     }
 
     /// <summary>A caption above a control, as one block of the settings line.</summary>
@@ -284,6 +292,9 @@ internal sealed partial class MainForm : Form, IViewHost
             _formatBox.Items.Add(new FormatItem(info));
         _formatBox.SelectedIndex = OutputFormats.All.ToList().FindIndex(info => info.Format == Settings.Format);
 
+        foreach (var box in new[] { _modelBox, _deviceBox, _languageBox, _formatBox })
+            box.DropDown += (_, _) => FitDropDownWidth(box);
+
         _wholeSentencesBox.Checked = Settings.WholeSentences;
         _toolTip.SetToolTip(_wholeSentencesBox, UiText.WholeSentencesTooltip);
 
@@ -300,6 +311,8 @@ internal sealed partial class MainForm : Form, IViewHost
         _setupButton.Margin = new Padding(9, 3, 3, 3);
         _setupButton.Click += (_, _) => RunSetup();
         _modelsButton.Click += (_, _) => ShowModels(autoDownload: null);
+        _gpuButton.Click += (_, _) => ShowGpuCheck();
+        _toolTip.SetToolTip(_gpuButton, UiText.GpuCheckTooltip);
         _modelBox.TextChanged += (_, _) =>
         {
             Settings.Model = _modelBox.Text.Trim();
@@ -326,6 +339,16 @@ internal sealed partial class MainForm : Form, IViewHost
             Settings.WholeSentences = _wholeSentencesBox.Checked;
             OnWhisperSettingsChanged();
         };
+    }
+
+    /// <summary>Makes the opened list wide enough for the longest entry, e.g. "Определить автоматически".</summary>
+    private static void FitDropDownWidth(ComboBox box)
+    {
+        var widest = box.Items.Cast<object>()
+            .Select(item => TextRenderer.MeasureText(box.GetItemText(item), box.Font).Width)
+            .DefaultIfEmpty(0)
+            .Max();
+        box.DropDownWidth = Math.Max(box.Width, widest + SystemInformation.VerticalScrollBarWidth + box.LogicalToDeviceUnits(8));
     }
 
     /// <summary>"Russisch (ru)" → "ru", "Automatisch erkennen" → "auto", anything else is taken as typed (e.g. "fr").</summary>
@@ -376,6 +399,29 @@ internal sealed partial class MainForm : Form, IViewHost
             _exeStatus.SetState(UiText.ExeNotFound, UiStyle.Danger);
         _setupButton.Visible = !found;
         _modelsButton.Enabled = found; // the models live next to faster-whisper-xxl.exe
+        _gpuButton.Enabled = found;    // faster-whisper-xxl.exe performs the check
+    }
+
+    /// <summary>Checks the graphics card and offers matching device and model settings.</summary>
+    private void ShowGpuCheck()
+    {
+        if (!FasterWhisperLocator.Exists(Settings.ExePath))
+            return;
+
+        using var dialog = new GpuDialog(
+            Settings.ExePath.Trim(),
+            () => (Settings.Device, Settings.Model),
+            ApplyDeviceAndModel);
+        dialog.ShowDialog(this);
+    }
+
+    /// <summary>Sets device and model through the controls, so the settings are updated and saved as usual.</summary>
+    private void ApplyDeviceAndModel(string device, string model)
+    {
+        if (!_deviceBox.Items.Contains(device))
+            _deviceBox.Items.Add(device);
+        _deviceBox.SelectedItem = device;
+        _modelBox.Text = model;
     }
 
     /// <summary>Opens the model overview; with <paramref name="autoDownload"/> it downloads that model right away.</summary>
@@ -414,8 +460,12 @@ internal sealed partial class MainForm : Form, IViewHost
     private void RunSetup()
     {
         using var dialog = new SetupDialog(FasterWhisperInstaller.DefaultRoot);
-        if (dialog.ShowDialog(this) == DialogResult.OK && dialog.InstalledExePath is { } exePath)
-            _exePathBox.Text = exePath; // updates the settings and the "gefunden" badge
+        if (dialog.ShowDialog(this) != DialogResult.OK || dialog.InstalledExePath is not { } exePath)
+            return;
+
+        _exePathBox.Text = exePath; // updates the settings and the "gefunden" badge
+        // Right after the setup the user does not know yet whether "cuda" fits this computer.
+        ShowGpuCheck();
     }
 
     private void OnWhisperSettingsChanged()
@@ -508,6 +558,7 @@ internal sealed partial class MainForm : Form, IViewHost
         using var cancellation = new CancellationTokenSource();
         _isRunning = true;
         _runCancellation = cancellation;
+        _pendingCudaProblem = null;
         ApplyRunState(view);
 
         try
@@ -530,7 +581,52 @@ internal sealed partial class MainForm : Form, IViewHost
         }
 
         if (_closeAfterRun)
+        {
             BeginInvoke(Close);
+            return;
+        }
+
+        // Shown after the run, when the settings can be changed again.
+        if (_pendingCudaProblem is { } cudaProblem)
+        {
+            _pendingCudaProblem = null;
+            OfferCudaFallback(cudaProblem.Result, cudaProblem.RemainingNotProcessed);
+        }
+    }
+
+    public void ReportCudaProblem(TranscriptionResult result, bool remainingNotProcessed)
+    {
+        // Only relevant while the graphics card is selected; the first report of a run wins.
+        if (result.CudaProblem != CudaProblem.None && CudaErrors.UsesCuda(Settings.Device))
+            _pendingCudaProblem ??= (result, remainingNotProcessed);
+    }
+
+    /// <summary>
+    /// Explains why the graphics card could not be used and offers a working alternative:
+    /// a smaller model if the memory was too small for a large one, the processor otherwise.
+    /// </summary>
+    private void OfferCudaFallback(TranscriptionResult result, bool remainingNotProcessed)
+    {
+        var smallerModel = result.CudaProblem == CudaProblem.OutOfMemory
+            && Settings.Model.Trim() is "large-v2" or "large-v3"
+            ? GpuAdvisor.SmallerModel
+            : null;
+
+        var text = UiText.CudaProblemMessage(result.CudaProblem);
+        if (remainingNotProcessed)
+            text += " " + UiText.CudaRemainingNotProcessed;
+        if (!string.IsNullOrWhiteSpace(result.Detail))
+            text += Environment.NewLine + Environment.NewLine + UiText.SetupDetail(result.Detail);
+        text += Environment.NewLine + Environment.NewLine
+            + (smallerModel is null ? UiText.CudaSwitchToCpuQuestion : UiText.CudaSwitchModelQuestion(smallerModel));
+
+        if (MessageBox.Show(this, text, UiText.AppTitle, MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes)
+            return;
+
+        if (smallerModel is not null)
+            _modelBox.Text = smallerModel;
+        else
+            ApplyDeviceAndModel("cpu", Settings.Model);
     }
 
     public void CancelRun() => _runCancellation?.Cancel();

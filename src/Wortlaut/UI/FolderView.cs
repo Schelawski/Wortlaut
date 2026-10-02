@@ -466,6 +466,8 @@ internal sealed class FolderView : UserControl, IRunView
         var progress = new Progress<BulkUpdate>(update => OnBulkUpdate(rows, update));
         var summary = await _queue.RunAsync(items, settings, skipExisting, progress, cancellationToken);
 
+        if (summary.CudaProblem != Core.Gpu.CudaProblem.None && summary.Cancelled > 0)
+            _log.AppendMessage(UiText.LogBulkStoppedByCuda);
         _log.AppendMessage(UiText.LogBulkSummary(summary));
     }
 
@@ -514,6 +516,8 @@ internal sealed class FolderView : UserControl, IRunView
                 _runFinished = finished.Finished;
                 _runTotal = finished.Total;
                 _log.AppendMessage(UiText.LogResult(finished.Result));
+                if (finished.Result.CudaProblem != Core.Gpu.CudaProblem.None)
+                    _host.ReportCudaProblem(finished.Result, remainingNotProcessed: finished.Finished < finished.Total);
                 break;
         }
 

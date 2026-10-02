@@ -123,6 +123,18 @@ internal sealed class FakeWhisperRunner : IWhisperRunner
         return this;
     }
 
+    /// <summary>Prints several lines (stderr) and exits with an error code, like a Python exception.</summary>
+    public FakeWhisperRunner FailsWithOutput(int exitCode, params string[] errorLines)
+    {
+        _behaviors.Add((_, onOutput, _) =>
+        {
+            foreach (var line in errorLines)
+                onOutput(new OutputLine(line, IsError: true));
+            return Task.FromResult(new WhisperRunResult(exitCode, errorLines.LastOrDefault(l => l.Trim().Length > 0)?.Trim()));
+        });
+        return this;
+    }
+
     /// <summary>
     /// Writes the result, then crashes while shutting down (like Faster-Whisper-XXL with 0xC0000409).
     /// </summary>

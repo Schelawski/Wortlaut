@@ -36,8 +36,8 @@ The user interface is available in German and Russian.
 - [Faster-Whisper-XXL](https://github.com/Purfview/whisper-standalone-win/releases) (the standalone
   `faster-whisper-xxl.exe`, it brings its own `ffmpeg.exe`). It can live in any folder.
 - For the device `cuda`: an NVIDIA GPU with a current driver. Without one, choose the device `cpu`
-  (much slower).
-- The Whisper models are downloaded by faster-whisper on first use (several GB for the `large` models).
+  (much slower). **Prüfen…** next to the device box tells you which one fits (see [Graphics card](#graphics-card)).
+- The Whisper models are downloaded once (several GB for the `large` models, see [Models](#models)).
 
 ## Getting started
 
@@ -81,6 +81,26 @@ first run does not silently download several gigabytes.
 | small | 0.5 GB | `Systran/faster-whisper-small` |
 
 Model names typed by hand are passed to faster-whisper unchanged; it downloads them itself if needed.
+
+### Graphics card
+
+**Prüfen…** next to the device box checks which graphics card faster-whisper can use and suggests matching
+settings. Wortlaut runs this check by itself right after **Wortlaut einrichten**.
+
+| Result | Suggestion |
+|--------|------------|
+| NVIDIA card found | `cuda` + `large-v2` (most accurate for Russian) |
+| NVIDIA card with less than 4 GB graphics memory | `cuda` + `large-v3-turbo` (the large models may not fit) |
+| No usable card | `cpu` + `large-v3-turbo` (almost as accurate, and on the processor much faster than the large models) |
+
+**Vorschlag übernehmen** applies the suggestion; device and model can still be changed by hand at any time.
+Whether a card is usable is decided by `faster-whisper-xxl.exe --checkcuda`. The name and memory of the card
+come from `nvidia-smi` (installed with the NVIDIA driver) and are only shown if it is available.
+
+If a transcription fails because the graphics card cannot be used (no CUDA device, driver too old, out of
+graphics memory, missing CUDA library), Wortlaut explains the cause in plain words and offers a setting that
+works: a smaller model when a large one does not fit into the graphics memory, the processor (`cpu`)
+otherwise. A folder run stops at the first such error, because every following file would fail the same way.
 
 ### Tab "Einzelne Datei" (single file)
 

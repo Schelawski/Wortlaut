@@ -58,5 +58,13 @@ internal interface IViewHost
     /// <summary>Cancels the running transcription.</summary>
     void CancelRun();
 
+    /// <summary>
+    /// A run failed because faster-whisper could not use the graphics card. Once the run has finished, the user is
+    /// told why and offered a working setting (processor or smaller model).
+    /// </summary>
+    /// <param name="result">The failed result with <see cref="TranscriptionResult.CudaProblem"/> set.</param>
+    /// <param name="remainingNotProcessed">A folder run stopped, so further files were not transcribed.</param>
+    void ReportCudaProblem(TranscriptionResult result, bool remainingNotProcessed);
+
     void ShowWarning(string message);
 }

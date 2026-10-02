@@ -282,5 +282,60 @@ public sealed class UiTextTests : IDisposable
         }
     }
 
+    [Fact]
+    public void GpuAndCudaTextsExistInBothLanguagesForEveryCase()
+    {
+        var verdicts = Enum.GetValues<Core.Gpu.GpuVerdict>();
+        var problems = Enum.GetValues<Core.Gpu.CudaProblem>().Where(p => p != Core.Gpu.CudaProblem.None);
+
+        foreach (var language in UiLanguages.All)
+        {
+            UiText.Language = language;
+            var texts = verdicts.SelectMany(v => new[]
+                {
+                    UiText.GpuHeadline(v),
+                    UiText.GpuBadge(v),
+                    UiText.GpuExplanation(Core.Gpu.GpuAdvisor.Recommend(v switch
+                    {
+                        Core.Gpu.GpuVerdict.Cuda => new Core.Gpu.GpuCheckResult(1, []),
+                        Core.Gpu.GpuVerdict.CudaLowMemory => new Core.Gpu.GpuCheckResult(1, [new Core.Gpu.GpuInfo("x", 2048)]),
+                        Core.Gpu.GpuVerdict.Cpu => new Core.Gpu.GpuCheckResult(0, []),
+                        _ => new Core.Gpu.GpuCheckResult(null, []),
+                    })),
+                })
+                .Concat(problems.SelectMany(p => new[] { UiText.CudaProblemShort(p), UiText.CudaProblemMessage(p) }))
+                .ToList();
+
+            Assert.All(texts, text => Assert.Equal(language == UiLanguage.Russian, ContainsCyrillic(text)));
+            Assert.Equal(texts.Count, texts.Distinct().Count()); // no case falls back to another case's text
+        }
+    }
+
+    [Theory]
+    [InlineData(4096, "NVIDIA GeForce GTX 1650 \u00B7 4 GB Grafikspeicher")]
+    [InlineData(6144, "NVIDIA GeForce GTX 1650 \u00B7 6 GB Grafikspeicher")]
+    [InlineData(1536, "NVIDIA GeForce GTX 1650 \u00B7 1,5 GB Grafikspeicher")]
+    public void GraphicsMemoryIsShownInWholeGigabytes(long mib, string expected)
+    {
+        Assert.Equal(expected, UiText.GpuDescription(new Core.Gpu.GpuInfo("NVIDIA GeForce GTX 1650", mib)));
+    }
+
+    [Fact]
+    public void CudaFailureIsExplainedInTheLog()
+    {
+        var result = new TranscriptionResult(JobOutcome.Failed, @"D:\a.mp4", @"D:\a.txt", TimeSpan.Zero)
+        {
+            Error = JobError.ProcessFailed,
+            ExitCode = 1,
+            Detail = "RuntimeError: CUDA failed with error no CUDA-capable device is detected",
+            CudaProblem = Core.Gpu.CudaProblem.NoDevice,
+        };
+
+        Assert.Equal(
+            "Fehler: Die Grafikkarte konnte nicht verwendet werden \u2013 keine passende NVIDIA-Grafikkarte gefunden (Code 1). " +
+            "Letzte Meldung: RuntimeError: CUDA failed with error no CUDA-capable device is detected",
+            UiText.ErrorText(result));
+    }
+
     private static bool ContainsCyrillic(string text) => text.Any(c => c is >= '\u0400' and <= '\u04FF');
 }

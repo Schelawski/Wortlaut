@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Wortlaut.Core.Gpu;
 
 namespace Wortlaut.Core;
 
@@ -105,7 +106,8 @@ public sealed class TranscriptionJob
                 {
                     Error = JobError.ProcessFailed,
                     ExitCode = run.ExitCode,
-                    Detail = run.LastErrorLine,
+                    Detail = tracker.CudaErrorLine ?? run.LastErrorLine,
+                    CudaProblem = tracker.CudaProblem,
                 };
             }
 
@@ -115,7 +117,8 @@ public sealed class TranscriptionJob
                 {
                     Error = JobError.ResultMissing,
                     ExitCode = run.ExitCode,
-                    Detail = run.LastErrorLine,
+                    Detail = tracker.CudaErrorLine ?? run.LastErrorLine,
+                    CudaProblem = tracker.CudaProblem,
                 };
             }
 
@@ -238,11 +241,25 @@ public sealed class TranscriptionJob
         private readonly object _sync = new();
         private TimeSpan? _duration = knownDuration;
         private bool _sawCompletion;
+        private CudaProblem _cudaProblem;
+        private string? _cudaErrorLine;
 
         /// <summary>True once faster-whisper has reported that all output files are written.</summary>
         public bool SawCompletion
         {
             get { lock (_sync) return _sawCompletion; }
+        }
+
+        /// <summary>The most specific CUDA error seen so far. Only reported if the run fails.</summary>
+        public CudaProblem CudaProblem
+        {
+            get { lock (_sync) return _cudaProblem; }
+        }
+
+        /// <summary>The output line of <see cref="CudaProblem"/>.</summary>
+        public string? CudaErrorLine
+        {
+            get { lock (_sync) return _cudaErrorLine; }
         }
 
         public void OnOutput(OutputLine line)
@@ -254,6 +271,15 @@ public sealed class TranscriptionJob
             {
                 if (WhisperOutputParser.IsCompletionLine(line.Text))
                     _sawCompletion = true;
+
+                // A specific error ("no CUDA-capable device") beats a generic one ("CUDA error") printed before it.
+                var cudaProblem = CudaErrors.Classify(line.Text);
+                if (cudaProblem != CudaProblem.None
+                    && (_cudaProblem == CudaProblem.None || (_cudaProblem == CudaProblem.Other && cudaProblem != CudaProblem.Other)))
+                {
+                    _cudaProblem = cudaProblem;
+                    _cudaErrorLine = line.Text.Trim();
+                }
 
                 if (WhisperOutputParser.TryParseDuration(line.Text, out var duration))
                 {

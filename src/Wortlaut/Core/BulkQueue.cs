@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Wortlaut.Core.Gpu;
 
 namespace Wortlaut.Core;
 
@@ -29,11 +30,18 @@ public sealed record BulkItemFinished(int ItemIndex, TranscriptionResult Result,
 public sealed record BulkSummary(int Completed, int Skipped, int Failed, int Cancelled, TimeSpan Elapsed)
 {
     public int Total => Completed + Skipped + Failed + Cancelled;
+
+    /// <summary>
+    /// Set when the run stopped because faster-whisper could not use the graphics card.
+    /// The remaining files are counted as cancelled.
+    /// </summary>
+    public CudaProblem CudaProblem { get; init; } = CudaProblem.None;
 }
 
 /// <summary>
 /// Transcribes several files one after another (one GPU) with the same settings.
-/// A failed file does not stop the queue; cancelling stops the whole queue.
+/// A failed file does not stop the queue; cancelling stops the whole queue. A CUDA error stops it as well,
+/// because every following file would fail the same way.
 /// </summary>
 public sealed class BulkQueue(TranscriptionJob job)
 {
@@ -97,13 +105,14 @@ public sealed class BulkQueue(TranscriptionJob job)
             progress?.Report(new BulkItemFinished(index, result, finished, total));
         }
         var producedTargets = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var cudaProblem = CudaProblem.None;
 
         foreach (var index in pending)
         {
             var item = items[index];
             TranscriptionResult result;
 
-            if (cancellationToken.IsCancellationRequested)
+            if (cancellationToken.IsCancellationRequested || cudaProblem != CudaProblem.None)
             {
                 result = new TranscriptionResult(
                     JobOutcome.Cancelled,
@@ -137,6 +146,7 @@ public sealed class BulkQueue(TranscriptionJob job)
 
                     if (result.Outcome == JobOutcome.Completed)
                         producedTargets.Add(result.TargetPath);
+                    cudaProblem = result.CudaProblem;
                 }
             }
 
@@ -146,6 +156,6 @@ public sealed class BulkQueue(TranscriptionJob job)
             progress?.Report(new BulkItemFinished(index, result, finished, total));
         }
 
-        return new BulkSummary(completed, skipped, failed, cancelled, stopwatch.Elapsed);
+        return new BulkSummary(completed, skipped, failed, cancelled, stopwatch.Elapsed) { CudaProblem = cudaProblem };
     }
 }

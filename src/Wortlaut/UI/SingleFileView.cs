@@ -238,6 +238,8 @@ internal sealed class SingleFileView : UserControl, IRunView
         var result = await _host.Job.RunAsync(new TranscriptionRequest(mediaPath, settings, overwrite, duration), progress, cancellationToken);
 
         _log.AppendMessage(UiText.LogResult(result));
+        if (result.CudaProblem != Core.Gpu.CudaProblem.None)
+            _host.ReportCudaProblem(result, remainingNotProcessed: false);
         _progressBar.Style = ProgressBarStyle.Continuous;
         UiStyle.SetProgressImmediately(_progressBar, result.Outcome == JobOutcome.Completed ? _progressBar.Maximum : 0);
         SetState(result.Outcome switch

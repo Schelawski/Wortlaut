@@ -1,3 +1,5 @@
+using Wortlaut.Core.Gpu;
+
 namespace Wortlaut.Core;
 
 /// <summary>
@@ -97,4 +99,10 @@ public sealed record TranscriptionResult(JobOutcome Outcome, string MediaPath, s
 
     /// <summary>Error details, see <see cref="JobError"/>.</summary>
     public string? Detail { get; init; }
+
+    /// <summary>
+    /// Set when faster-whisper failed because it could not use the graphics card. <see cref="Detail"/> then holds
+    /// the CUDA error line instead of the last output line.
+    /// </summary>
+    public CudaProblem CudaProblem { get; init; } = CudaProblem.None;
 }
