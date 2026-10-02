@@ -246,10 +246,21 @@ internal sealed class FolderView : UserControl, IRunView
     private void UpdateGridMetrics()
     {
         var font = _grid.Font;
+        var headerFont = _grid.ColumnHeadersDefaultCellStyle.Font ?? font;
         var padding = LogicalToDeviceUnits(24);
+
+        // Wide enough for the header and the widest value; the header is longer in Russian ("Длительность").
+        int FitWidth(int column, params string[] values) =>
+            Math.Max(
+                TextRenderer.MeasureText(_grid.Columns[column].HeaderText, headerFont).Width,
+                values.Max(value => TextRenderer.MeasureText(value, font).Width)) + padding;
+
         _grid.Columns[CheckColumn].Width = font.Height + LogicalToDeviceUnits(16);
-        _grid.Columns[DurationColumn].Width = TextRenderer.MeasureText("00:00:00", font).Width + padding;
-        _grid.Columns[StatusColumn].Width = TextRenderer.MeasureText(UiText.RowExistsWillSkip, font).Width + padding;
+        _grid.Columns[DurationColumn].Width = FitWidth(DurationColumn, "00:00:00");
+        _grid.Columns[StatusColumn].Width = FitWidth(
+            StatusColumn,
+            UiText.RowWaiting, UiText.RowExistsWillSkip, UiText.RowRunning(0.99), UiText.RowDone,
+            UiText.RowSkipped, UiText.RowFailed, UiText.RowCancelled);
         _grid.Columns[FileColumn].MinimumWidth = LogicalToDeviceUnits(120);
 
         var rowHeight = font.Height + LogicalToDeviceUnits(12);

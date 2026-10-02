@@ -40,6 +40,7 @@ public class SettingsStoreTests
             LastFolder = @"D:\Videos\Satsang 2026-09",
             IncludeSubfolders = true,
             SkipExisting = false,
+            UiLanguage = "ru",
         };
 
         store.Save(saved);
@@ -102,7 +103,9 @@ public class SettingsStoreTests
         folder.CreateFile("Wortlaut.settings.json", """{ "Model": "large-v2", "Format": "Text", "SkipExisting": true }""");
         var store = new SettingsStore(folder.Path, Path.Combine(folder.Path, "appdata"));
 
-        Assert.True(store.Load().WholeSentences);
+        var settings = store.Load();
+        Assert.True(settings.WholeSentences);
+        Assert.Equal(string.Empty, settings.UiLanguage); // not chosen yet: Windows decides
     }
 
     [Fact]

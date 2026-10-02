@@ -8,7 +8,8 @@ namespace Wortlaut.UI;
 /// </summary>
 internal sealed partial class MainForm : Form, IViewHost
 {
-    private readonly SettingsStore _settingsStore = new();
+    private readonly SettingsStore _settingsStore;
+    private readonly WindowLayout? _initialLayout;
     private readonly System.Windows.Forms.Timer _saveTimer = new() { Interval = 500 };
 
     private readonly TextBox _exePathBox = new() { Anchor = AnchorStyles.Left | AnchorStyles.Right };
@@ -31,6 +32,7 @@ internal sealed partial class MainForm : Form, IViewHost
     private readonly TabControl _tabs = new() { Dock = DockStyle.Fill, Padding = new Point(14, 5) };
     private readonly ToolStripStatusLabel _summaryLabel = new();
     private readonly ToolStripStatusLabel _savedLabel = new() { Spring = true, TextAlign = ContentAlignment.MiddleRight };
+    private readonly ToolStripDropDownButton _uiLanguageButton = new();
 
     private readonly SingleFileView _singleFileView;
     private readonly FolderView _folderView;
@@ -43,9 +45,17 @@ internal sealed partial class MainForm : Form, IViewHost
     private bool _closeAfterRun;
     private bool _initializing = true;
 
-    public MainForm()
+    /// <param name="settingsStore">Where the settings are saved.</param>
+    /// <param name="settings">
+    /// The loaded settings. <see cref="UiText.Language"/> must already match them, because the controls read
+    /// their texts while they are created.
+    /// </param>
+    /// <param name="initialLayout">Window position to restore, e.g. after switching the UI language.</param>
+    public MainForm(SettingsStore settingsStore, AppSettings settings, WindowLayout? initialLayout = null)
     {
-        Settings = _settingsStore.Load();
+        _settingsStore = settingsStore;
+        _initialLayout = initialLayout;
+        Settings = settings;
         DurationProbe = new MediaDurationProbe(() => MediaDurationProbe.FindFfmpegNextTo(Settings.ExePath));
         Job = new TranscriptionJob(new WhisperRunner());
 
@@ -82,6 +92,39 @@ internal sealed partial class MainForm : Form, IViewHost
 
     public bool IsRunning => _isRunning;
 
+    /// <summary>True when the window was closed to reopen it in another UI language.</summary>
+    public bool LanguageChangeRequested { get; private set; }
+
+    /// <summary>Position, size and tab when the window was closed.</summary>
+    public WindowLayout? LastLayout { get; private set; }
+
+    /// <summary>What is kept when the window is rebuilt in another UI language.</summary>
+    internal sealed record WindowLayout(Rectangle Bounds, FormWindowState State, int SelectedTab);
+
+    protected override void OnLoad(EventArgs e)
+    {
+        base.OnLoad(e);
+
+        // Applied after the DPI scaling of OnLoad, so the size is not scaled a second time.
+        if (_initialLayout is not null)
+        {
+            StartPosition = FormStartPosition.Manual;
+            Bounds = _initialLayout.Bounds;
+            WindowState = _initialLayout.State;
+            if (_initialLayout.SelectedTab >= 0 && _initialLayout.SelectedTab < _tabs.TabCount)
+                _tabs.SelectedIndex = _initialLayout.SelectedTab;
+        }
+    }
+
+    protected override void OnFormClosed(FormClosedEventArgs e)
+    {
+        LastLayout = new WindowLayout(
+            WindowState == FormWindowState.Normal ? Bounds : RestoreBounds,
+            WindowState == FormWindowState.Minimized ? FormWindowState.Normal : WindowState,
+            _tabs.SelectedIndex);
+        base.OnFormClosed(e);
+    }
+
     // ----- Layout -----
 
     private void BuildLayout()
@@ -106,9 +149,39 @@ internal sealed partial class MainForm : Form, IViewHost
         var statusStrip = new StatusStrip { SizingGrip = true, ShowItemToolTips = true };
         statusStrip.Items.Add(_summaryLabel);
         statusStrip.Items.Add(_savedLabel);
+        statusStrip.Items.Add(BuildUiLanguageButton());
 
         Controls.Add(root);
         Controls.Add(statusStrip);
+    }
+
+    /// <summary>"Deutsch ▾" / "Русский ▾" at the right end of the status bar.</summary>
+    private ToolStripDropDownButton BuildUiLanguageButton()
+    {
+        _uiLanguageButton.Text = UiLanguages.NativeName(UiText.Language);
+        _uiLanguageButton.ToolTipText = UiText.UiLanguageTooltip;
+        _uiLanguageButton.DisplayStyle = ToolStripItemDisplayStyle.Text;
+
+        foreach (var language in UiLanguages.All)
+        {
+            var item = new ToolStripMenuItem(UiLanguages.NativeName(language)) { Checked = language == UiText.Language };
+            item.Click += (_, _) => SwitchUiLanguage(language);
+            _uiLanguageButton.DropDownItems.Add(item);
+        }
+
+        return _uiLanguageButton;
+    }
+
+    /// <summary>Saves the choice and closes the window; Program reopens it in the new language.</summary>
+    private void SwitchUiLanguage(UiLanguage language)
+    {
+        if (language == UiText.Language || _isRunning)
+            return;
+
+        Settings.UiLanguage = UiLanguages.Code(language);
+        SaveSettings();
+        LanguageChangeRequested = true;
+        Close();
     }
 
     private TableLayoutPanel BuildSettingsGrid()
@@ -389,6 +462,7 @@ internal sealed partial class MainForm : Form, IViewHost
     private void ApplyRunState(IRunView? runningView)
     {
         _settingsGroup.Enabled = runningView is null;
+        _uiLanguageButton.Enabled = runningView is null;
         foreach (var view in _views)
         {
             view.SetRunState(runningView is null

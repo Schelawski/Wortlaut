@@ -30,8 +30,8 @@
     <!-- WinForms does not support trimming -->
     <PublishTrimmed>false</PublishTrimmed>
     <DebugType>embedded</DebugType>
-    <!-- The UI is German: keep only the German framework resources (English is built in) -->
-    <SatelliteResourceLanguages>de</SatelliteResourceLanguages>
+    <!-- The UI is German and Russian: keep only those framework resources (English is built in) -->
+    <SatelliteResourceLanguages>de;ru</SatelliteResourceLanguages>
   </PropertyGroup>
 
   <ItemGroup>

@@ -32,6 +32,12 @@ public sealed class AppSettings
     /// <summary>Folder mode: skip files whose transcript already exists.</summary>
     public bool SkipExisting { get; set; } = true;
 
+    /// <summary>
+    /// Language of the user interface as a code ("de", "ru"). Empty until the user picks one;
+    /// then the Windows display language decides.
+    /// </summary>
+    public string UiLanguage { get; set; } = string.Empty;
+
     public WhisperSettings ToWhisperSettings() => new()
     {
         ExePath = ExePath.Trim(),
@@ -53,5 +59,6 @@ public sealed class AppSettings
             Format = OutputFormat.Text;
         LastFile ??= string.Empty;
         LastFolder ??= string.Empty;
+        UiLanguage ??= string.Empty;
     }
 }

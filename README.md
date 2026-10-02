@@ -12,7 +12,7 @@ D:\Videos\Satsang 2026-09\Лекция 12 — Медитация и дыхани
 D:\Videos\Satsang 2026-09\Лекция 12 — Медитация и дыхание.txt   <- new
 ```
 
-The user interface is in German.
+The user interface is available in German and Russian.
 
 ## Features
 
@@ -26,6 +26,8 @@ The user interface is in German.
   in a temporary folder next to the file.
 - Unicode file names (e.g. Cyrillic) and paths with spaces are fully supported.
 - Settings are remembered between sessions.
+- User interface in German and Russian. On the first start Wortlaut follows the Windows display language
+  (Russian → Russian, otherwise German); the language can be switched at the bottom right of the window.
 - Ships as one self-contained `Wortlaut.exe` – no .NET installation needed.
 
 ## Requirements
