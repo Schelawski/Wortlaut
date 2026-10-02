@@ -116,8 +116,12 @@ public sealed class FasterWhisperInstaller(ResumableDownloader downloader, IArch
 
             // 3. Check that it starts before replacing anything
             progress?.Report(new SetupProgress(SetupStage.Verifying, null));
-            if (await probe.GetVersionAsync(extractedExe, cancellationToken).ConfigureAwait(false) is null)
-                throw new SetupException(SetupError.ExeDoesNotStart, extractedExe);
+            var libraryVersion = await probe.GetVersionAsync(extractedExe, cancellationToken).ConfigureAwait(false)
+                ?? throw new SetupException(SetupError.ExeDoesNotStart, extractedExe);
+
+            // Remember which release this is: "--version" only reports the faster-whisper library ("1.1.1"),
+            // not the release ("r245.4") that an update check (issue #17) needs.
+            InstalledRelease.Write(Path.GetDirectoryName(extractedExe)!, new InstalledRelease(package.Version, package.FileName, libraryVersion, DateTimeOffset.Now));
 
             // 4. Move into place
             MoveIntoPlace(Path.GetDirectoryName(extractedExe)!, target);

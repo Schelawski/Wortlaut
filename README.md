@@ -85,7 +85,9 @@ On the first start (no `faster-whisper-xxl.exe` found) a wizard guides through t
    target, then **Set up Wortlaut** downloads the newest Faster-Whisper-XXL from its
    [official GitHub release](https://github.com/Purfview/whisper-standalone-win/releases) (about 1.4 GB,
    about 4.5 GB unpacked) into `%LOCALAPPDATA%\Wortlaut\Faster-Whisper-XXL` – no administrator rights needed.
-   The free disk space is checked first, and the program is test-started before it is used.
+   The free disk space is checked first, and the program is test-started before it is used. The installed
+   release (e.g. `r245.4`) is recorded in `wortlaut-install.json` next to `faster-whisper-xxl.exe`, which also
+   marks the installation as Wortlaut's own (for a future update check, issue #17).
 3. **Check the graphics card** – see [Graphics card](#graphics-card); the suggestion is applied with one click.
 4. **Download a language model** – the selected model with progress (or **Later**: Wortlaut then asks
    before the first transcription).

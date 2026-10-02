@@ -359,6 +359,57 @@ public class FasterWhisperInstallerTests
     }
 
     [Fact]
+    public async Task InstalledReleaseIsRemembered()
+    {
+        using var folder = new TempFolder();
+
+        var exe = await Installer(new FakeProbe("faster-whisper-xxl.exe 1.1.1")).InstallAsync(Package, folder.Path, null, CancellationToken.None);
+
+        var release = InstalledRelease.Read(exe);
+        Assert.NotNull(release);
+        Assert.Equal("r1", release.Release);
+        Assert.Equal(Package.FileName, release.PackageFileName);
+        Assert.Equal("faster-whisper-xxl.exe 1.1.1", release.LibraryVersion);
+        Assert.True(release.InstalledAt > DateTimeOffset.Now.AddMinutes(-5));
+    }
+
+    [Fact]
+    public async Task ReinstallReplacesTheRememberedRelease()
+    {
+        using var folder = new TempFolder();
+        var installDirectory = Path.Combine(folder.Path, "Faster-Whisper-XXL");
+        folder.CreateFile(Path.Combine("Faster-Whisper-XXL", "faster-whisper-xxl.exe"), "old exe");
+        InstalledRelease.Write(installDirectory, new InstalledRelease("r0.9", "old.7z", "1.0.0", DateTimeOffset.Now.AddYears(-1)));
+
+        var exe = await Installer(new FakeProbe("1.1.1")).InstallAsync(Package, folder.Path, null, CancellationToken.None);
+
+        Assert.Equal("r1", InstalledRelease.Read(exe)?.Release);
+    }
+
+    [Theory]
+    [InlineData(null)]                                      // no file: installed by the user, not by Wortlaut
+    [InlineData("not json")]
+    [InlineData("{ \"Release\": \"\" }")]
+    public void ForeignOrBrokenInstallationsHaveNoRelease(string? content)
+    {
+        using var folder = new TempFolder();
+        var exe = folder.CreateFile(Path.Combine("Faster-Whisper-XXL", "faster-whisper-xxl.exe"), "exe");
+        if (content is not null)
+            folder.CreateFile(Path.Combine("Faster-Whisper-XXL", InstalledRelease.FileName), content);
+
+        Assert.Null(InstalledRelease.Read(exe));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("faster-whisper-xxl.exe")] // no folder
+    public void MissingPathsHaveNoRelease(string? exePath)
+    {
+        Assert.Null(InstalledRelease.Read(exePath));
+    }
+
+    [Fact]
     public void RequiredSpaceShrinksWithTheDownloadedPart()
     {
         using var folder = new TempFolder();
