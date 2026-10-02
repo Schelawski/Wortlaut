@@ -44,6 +44,12 @@ public sealed class AppSettings
     /// </summary>
     public Setup.WizardStep? WizardResumeStep { get; set; }
 
+    /// <summary>
+    /// Ask GitHub on start whether a newer version exists (only the version number is requested).
+    /// On by default, also for older settings files; can be switched off under "Extras".
+    /// </summary>
+    public bool CheckForUpdates { get; set; } = true;
+
     public WhisperSettings ToWhisperSettings() => new()
     {
         ExePath = ExePath.Trim(),

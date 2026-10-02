@@ -104,3 +104,12 @@ Variant: in step 1 click **Ich habe Faster-Whisper-XXL schon…** and select an 
 | Step | Expected |
 |------|----------|
 | Change model, language and format, close and restart Wortlaut. | All settings, the last file and the last folder are restored. |
+
+## 9. Version and update check
+
+| Step | Expected |
+|------|----------|
+| Start a release build (from the GitHub release). | The window title shows the version, e.g. "Wortlaut 1.0.0"; the file properties (Details) show the same version and "© 2026 A. Schelawski". |
+| Start an older release while a newer one exists. | After a few seconds the status bar shows "Neue Version x.y.z – herunterladen"; a click opens the release page on GitHub. |
+| **Extras → Beim Start nach neuen Versionen suchen** off, restart. | No hint, no request to GitHub. |
+| Start without internet. | No hint and no error message. |

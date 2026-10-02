@@ -4,6 +4,7 @@ using Wortlaut.Core.Gpu;
 using Wortlaut.Core.Help;
 using Wortlaut.Core.Models;
 using Wortlaut.Core.Setup;
+using Wortlaut.Core.Updates;
 
 namespace Wortlaut.UI;
 
@@ -39,6 +40,13 @@ internal sealed partial class MainForm : Form, IViewHost
     };
     private readonly TabControl _tabs = new() { Dock = DockStyle.Fill, Padding = new Point(14, 5) };
     private readonly ToolStripStatusLabel _summaryLabel = new();
+    private readonly ToolStripStatusLabel _updateLabel = new()
+    {
+        IsLink = true,
+        Visible = false,
+        ToolTipText = UiText.UpdateTooltip,
+        Margin = new Padding(12, 3, 0, 2),
+    };
     private readonly ToolStripStatusLabel _savedLabel = new() { Spring = true, TextAlign = ContentAlignment.MiddleRight };
     private readonly ToolStripDropDownButton _uiLanguageButton = new();
     private readonly ToolStripDropDownButton _extrasButton = new();
@@ -74,7 +82,7 @@ internal sealed partial class MainForm : Form, IViewHost
         SuspendLayout();
         AutoScaleDimensions = new SizeF(96F, 96F);
         AutoScaleMode = AutoScaleMode.Dpi;
-        Text = UiText.AppTitle;
+        Text = $"{UiText.AppTitle} {AppVersion.Current}";
         StartPosition = FormStartPosition.CenterScreen;
         ClientSize = new Size(900, 720);
         MinimumSize = new Size(760, 600);
@@ -128,6 +136,15 @@ internal sealed partial class MainForm : Form, IViewHost
         }
     }
 
+    protected override async void OnShown(EventArgs e)
+    {
+        base.OnShown(e);
+
+        // Once per start, in the background; not again when the window is rebuilt for another UI language.
+        if (_initialLayout is null)
+            await CheckForUpdatesAsync();
+    }
+
     protected override void OnFormClosed(FormClosedEventArgs e)
     {
         LastLayout = new WindowLayout(
@@ -160,6 +177,9 @@ internal sealed partial class MainForm : Form, IViewHost
 
         var statusStrip = new StatusStrip { SizingGrip = true, ShowItemToolTips = true };
         statusStrip.Items.Add(_summaryLabel);
+        // Only shown when a newer version exists (see CheckForUpdatesAsync).
+        _updateLabel.Click += (_, _) => Wizard.SetupWizard.OpenUrl(_updateLabel.Tag as string ?? UpdateChecker.ReleasesPageUrl);
+        statusStrip.Items.Add(_updateLabel);
         statusStrip.Items.Add(_savedLabel);
         var helpButton = new ToolStripButton("?  " + UiText.HelpButton) { ToolTipText = UiText.HelpButtonTooltip, DisplayStyle = ToolStripItemDisplayStyle.Text };
         helpButton.Click += (_, _) => HelpForm.Open(this, HelpTopicForFocus());
@@ -214,7 +234,33 @@ internal sealed partial class MainForm : Form, IViewHost
         _extrasButton.DropDownItems.Add(_extrasModelsItem);
         _extrasGpuItem.Click += (_, _) => ShowGpuCheck();
         _extrasModelsItem.Click += (_, _) => ShowModels(autoDownload: null);
+
+        _extrasButton.DropDownItems.Add(new ToolStripSeparator());
+        var updatesItem = new ToolStripMenuItem(UiText.ExtrasCheckUpdates) { CheckOnClick = true, Checked = Settings.CheckForUpdates };
+        updatesItem.CheckedChanged += (_, _) =>
+        {
+            Settings.CheckForUpdates = updatesItem.Checked;
+            if (!Settings.CheckForUpdates)
+                _updateLabel.Visible = false;
+            ScheduleSave();
+        };
+        _extrasButton.DropDownItems.Add(updatesItem);
         return _extrasButton;
+    }
+
+    /// <summary>Asks GitHub for a newer version and shows a link in the status bar if there is one.</summary>
+    private async Task CheckForUpdatesAsync()
+    {
+        if (!Settings.CheckForUpdates)
+            return;
+
+        var newer = await new UpdateChecker(AppHttp.Client).FindNewerReleaseAsync(AppVersion.Current, CancellationToken.None);
+        if (newer is null || IsDisposed || !Settings.CheckForUpdates)
+            return;
+
+        _updateLabel.Text = UiText.UpdateAvailable(newer.Version);
+        _updateLabel.Tag = newer.PageUrl.AbsoluteUri;
+        _updateLabel.Visible = true;
     }
 
     /// <summary>"Deutsch ▾" / "Русский ▾" at the right end of the status bar.</summary>

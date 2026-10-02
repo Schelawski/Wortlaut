@@ -18,6 +18,16 @@ The user interface is available in German, English and Russian.
 > [github.com/Schelawski/Wortlaut](https://github.com/Schelawski/Wortlaut). If you paid for Wortlaut, you paid
 > for something you can get here for free – and copies from other sources may have been changed.
 
+## Download
+
+**[Download Wortlaut.exe](https://github.com/Schelawski/Wortlaut/releases/latest/download/Wortlaut.exe)** –
+always the newest version. No installation needed: start it, and the [welcome wizard](#welcome-wizard)
+sets up everything else. All versions and their changes: [Releases](https://github.com/Schelawski/Wortlaut/releases).
+
+Each release also contains `Wortlaut.exe.sha256`. To check the download, run `Get-FileHash Wortlaut.exe` in
+PowerShell and compare the value. On the first start Windows may show “Windows protected your PC” – click
+“More info” → “Run anyway” (see the help topic “Problems and solutions”).
+
 ## Features
 
 - **Single file** – choose a file from any folder via dialog or drag & drop and transcribe it.
@@ -33,6 +43,8 @@ The user interface is available in German, English and Russian.
 - User interface in German, English and Russian. German is the default (Russian on a Russian Windows); the
   language can be switched at the bottom right of the window and on the first page of the welcome wizard.
 - Built-in help in plain language (see [Help](#help)).
+- Shows its version in the window title and, on start, a link when a newer version is available. Only the
+  version number is requested from GitHub; switch it off under **Tools → Look for new versions on start**.
 - Ships as one self-contained `Wortlaut.exe` – no .NET installation needed.
 
 ## Requirements
@@ -214,7 +226,35 @@ src/Wortlaut/
   Help/    help texts (help.de.md, help.en.md, help.ru.md), embedded into the exe
 tests/Wortlaut.Tests/   xUnit tests for the core (a fake runner replaces faster-whisper)
 docs/MANUAL-TESTING.md  manual test plan
+.github/workflows/      build.yml (every push and pull request), release.yml (version tags)
 ```
+
+### Automatic builds
+
+Every push to `develop` or `master` and every pull request is built and tested on GitHub Actions
+([build.yml](.github/workflows/build.yml)). Pushes also keep the built `Wortlaut.exe` for two weeks as a
+test build (Actions → the run → Artifacts).
+
+### Releasing
+
+1. Move the entries under `## [Unreleased]` in [CHANGELOG.md](CHANGELOG.md) into a new section
+   `## [1.2.0]` (the version without "v") and commit.
+2. Tag the commit and push the tag:
+   ```powershell
+   git tag v1.2.0
+   git push origin v1.2.0
+   ```
+3. [release.yml](.github/workflows/release.yml) builds and tests, stamps the version into `Wortlaut.exe`
+   (window title, file properties), and creates the GitHub release with `Wortlaut.exe`,
+   `Wortlaut.exe.sha256` and the changelog section as release notes.
+
+A tag with a suffix such as `v1.3.0-beta.1` becomes a pre-release: it is not offered by the update check
+and not reached by the `latest/download` link. Without a changelog section for the version, the release
+fails before anything is published.
+
+## Contributing
+
+Bug reports, ideas and pull requests are welcome – please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
 
 ## License
 

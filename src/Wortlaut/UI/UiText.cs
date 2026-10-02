@@ -743,6 +743,21 @@ internal static class UiText
     public static string ExtrasWizard => L("Einrichtungs-Assistent…", "Мастер настройки…", "Setup wizard…");
     public static string ExtrasGpu => L("Grafikkarte prüfen…", "Проверить видеокарту…", "Check graphics card…");
 
+    public static string ExtrasCheckUpdates => L(
+        "Beim Start nach neuen Versionen suchen",
+        "Проверять наличие новых версий при запуске",
+        "Look for new versions on start");
+
+    public static string UpdateAvailable(string version) => L(
+        $"Neue Version {version} – herunterladen",
+        $"Новая версия {version} – загрузить",
+        $"New version {version} – download");
+
+    public static string UpdateTooltip => L(
+        "Öffnet die offizielle Download-Seite von Wortlaut auf GitHub.",
+        "Открывает официальную страницу загрузки Wortlaut на GitHub.",
+        "Opens the official download page of Wortlaut on GitHub.");
+
     public static string SetupVersion(string version, bool isFallback) => isFallback
         ? L($"{version} (GitHub gerade nicht erreichbar – bekannte Version)", $"{version} (GitHub сейчас недоступен – известная версия)", $"{version} (GitHub not reachable right now – known version)")
         : version;

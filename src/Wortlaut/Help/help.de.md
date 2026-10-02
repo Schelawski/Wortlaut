@@ -9,7 +9,7 @@ Wortlaut schreibt auf, was in Video- und Audioaufnahmen gesprochen wird – zum 
 
 Die Spracherkennung läuft vollständig auf Ihrem Computer. **Keine Aufnahme und kein Text wird ins Internet hochgeladen.** Sie brauchen kein Benutzerkonto und kein Abo.
 
-Das Internet wird nur einmalig gebraucht: zum Herunterladen des Spracherkennungsprogramms und der Sprachmodelle. Danach funktioniert Wortlaut auch ohne Internet.
+Das Internet wird nur einmalig gebraucht: zum Herunterladen des Spracherkennungsprogramms und der Sprachmodelle. Danach funktioniert Wortlaut auch ohne Internet. Zusätzlich fragt Wortlaut beim Start bei GitHub nach, ob es eine neue Version gibt – dabei wird nur die Versionsnummer abgefragt, nichts über Sie oder Ihre Aufnahmen. Abschalten können Sie das unter „Extras“.
 
 ## Ihre Dateien bleiben unverändert
 

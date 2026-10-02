@@ -9,7 +9,7 @@ Wortlaut writes down what is said in video and audio recordings – for example 
 
 The speech recognition runs entirely on your computer. **No recording and no text is uploaded to the internet.** You need no account and no subscription.
 
-The internet is only needed once: to download the speech recognition program and the language models. After that, Wortlaut also works without internet.
+The internet is only needed once: to download the speech recognition program and the language models. After that, Wortlaut also works without internet. In addition, Wortlaut asks GitHub on start whether there is a new version – only the version number is requested, nothing about you or your recordings. You can switch this off under “Tools”.
 
 ## Your files stay unchanged
 
