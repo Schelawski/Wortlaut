@@ -38,4 +38,8 @@
     <InternalsVisibleTo Include="Wortlaut.Tests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="SharpCompress" Version="0.50.4" />
+  </ItemGroup>
+
 </Project>

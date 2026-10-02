@@ -42,9 +42,15 @@ The user interface is available in German and Russian.
 ## Getting started
 
 1. Get `Wortlaut.exe` (see [Build](#build)) and put it into any folder.
-2. Start it. On the first start Wortlaut looks for `faster-whisper-xxl.exe` next to `Wortlaut.exe`
-   and in the current directory (also in a `Faster-Whisper-XXL` subfolder). If it is not found, the
-   badge next to the path shows **nicht gefunden** – use **Durchsuchen…** to select it.
+2. Start it. On the first start Wortlaut looks for `faster-whisper-xxl.exe` next to `Wortlaut.exe`,
+   in the current directory and in `%LOCALAPPDATA%\Wortlaut` (also in a `Faster-Whisper-XXL` subfolder).
+   If it is not found, the badge next to the path shows **nicht gefunden** and two options appear:
+   - **Wortlaut einrichten** downloads the newest Faster-Whisper-XXL from its
+     [official GitHub release](https://github.com/Purfview/whisper-standalone-win/releases) (about 1.4 GB,
+     about 4.5 GB unpacked) and installs it into `%LOCALAPPDATA%\Wortlaut\Faster-Whisper-XXL` – no
+     administrator rights needed. The download can be cancelled and continues where it stopped; the free
+     disk space is checked first, and the program is test-started before it is used.
+   - **Durchsuchen…** selects an existing installation.
 3. Choose the settings in the **Faster-Whisper** box:
 
    | Setting  | Values                                                                        |
@@ -137,3 +143,8 @@ docs/MANUAL-TESTING.md  manual test plan
 ## License
 
 [GNU General Public License v3.0](LICENSE)
+
+Third-party components:
+- [Faster-Whisper-XXL](https://github.com/Purfview/whisper-standalone-win) (MIT) – downloaded from its official
+  release on request, not bundled.
+- [SharpCompress](https://github.com/adamhathcock/sharpcompress) (MIT) – extracts the Faster-Whisper-XXL archive.

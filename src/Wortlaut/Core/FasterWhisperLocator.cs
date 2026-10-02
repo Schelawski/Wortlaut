@@ -11,11 +11,11 @@ public static class FasterWhisperLocator
     private const string ArchiveFolderName = "Faster-Whisper-XXL";
 
     /// <summary>
-    /// Searches the folder of Wortlaut.exe and the current directory (and a "Faster-Whisper-XXL" subfolder
-    /// of each).
+    /// Searches the folder of Wortlaut.exe, the current directory and the folder Wortlaut installs into
+    /// (<c>%LOCALAPPDATA%\Wortlaut</c>), each also with a "Faster-Whisper-XXL" subfolder.
     /// </summary>
     public static string? FindDefault() =>
-        Find([AppContext.BaseDirectory, Environment.CurrentDirectory]);
+        Find([AppContext.BaseDirectory, Environment.CurrentDirectory, Setup.FasterWhisperInstaller.DefaultRoot]);
 
     /// <summary>Returns the first existing faster-whisper-xxl.exe in the given folders.</summary>
     public static string? Find(IEnumerable<string> directories)

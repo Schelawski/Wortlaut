@@ -265,8 +265,10 @@ internal static class UiText
     // ----- Messages -----
 
     public static string ExeMissing => L(
-        "faster-whisper-xxl.exe wurde nicht gefunden. Bitte den Pfad unter „Programm“ angeben oder über „Durchsuchen…“ auswählen.",
-        "faster-whisper-xxl.exe не найден. Укажите путь в поле «Программа» или выберите файл через «Обзор…».");
+        "faster-whisper-xxl.exe wurde nicht gefunden. Klicken Sie auf „Wortlaut einrichten“, um es automatisch herunterzuladen, " +
+        "oder wählen Sie eine vorhandene Installation über „Durchsuchen…“.",
+        "faster-whisper-xxl.exe не найден. Нажмите «Настроить Wortlaut», чтобы загрузить его автоматически, " +
+        "или выберите уже установленную программу через «Обзор…».");
 
     public static string ModelMissing => L("Bitte ein Modell angeben.", "Укажите модель.");
     public static string DeviceMissing => L("Bitte ein Gerät auswählen.", "Выберите устройство.");
@@ -292,6 +294,114 @@ internal static class UiText
 
     public static string UnexpectedError(string message) =>
         L($"Unerwarteter Fehler: {message}", $"Непредвиденная ошибка: {message}");
+
+    // ----- Setup (download Faster-Whisper-XXL) -----
+
+    public static string SetUp => L("Wortlaut einrichten", "Настроить Wortlaut");
+    public static string SetupTitle => L("Wortlaut einrichten", "Настройка Wortlaut");
+
+    public static string SetupIntro => L(
+        "Für die Spracherkennung braucht Wortlaut das kostenlose Programm Faster-Whisper-XXL. " +
+        "Es wird jetzt einmalig von GitHub heruntergeladen und auf diesem Computer eingerichtet. " +
+        "Ihre Aufnahmen bleiben dabei immer auf Ihrem Computer.",
+        "Для распознавания речи Wortlaut нужна бесплатная программа Faster-Whisper-XXL. " +
+        "Сейчас она один раз загрузится с GitHub и будет установлена на этот компьютер. " +
+        "Ваши записи при этом всегда остаются на вашем компьютере.");
+
+    public static string SetupVersionLabel => L("Version", "Версия");
+    public static string SetupDownloadLabel => L("Download", "Загрузка");
+    public static string SetupSpaceLabel => L("Speicherplatz", "Место на диске");
+    public static string SetupTargetLabel => L("Ziel", "Папка");
+    public static string SetupLicenseLabel => L("Lizenz", "Лицензия");
+    public static string SetupLicenseLink => L("MIT (frei nutzbar) – Projektseite öffnen", "MIT (свободное использование) – открыть страницу проекта");
+    public static string SetupStart => L("Herunterladen und einrichten", "Загрузить и установить");
+    public static string SetupRetry => L("Erneut versuchen", "Повторить");
+    public static string SetupFinish => L("Fertig", "Готово");
+    public static string SetupLookingUp => L("Suche die neueste Version …", "Поиск последней версии…");
+    public static string SetupVerifying => L("Prüfe, ob das Programm startet …", "Проверка запуска программы…");
+    public static string SetupCancelling => L("Wird abgebrochen …", "Отмена…");
+
+    public static string SetupDone(string version) => L(
+        $"Fertig! Faster-Whisper-XXL {version} ist eingerichtet. Sie können jetzt Dateien transkribieren.",
+        $"Готово! Faster-Whisper-XXL {version} установлен. Теперь можно расшифровывать файлы.");
+
+    public static string SetupVersion(string version, bool isFallback) => isFallback
+        ? L($"{version} (GitHub gerade nicht erreichbar – bekannte Version)", $"{version} (GitHub сейчас недоступен – известная версия)")
+        : version;
+
+    public static string SetupSpace(long required, long? free) => free is { } available
+        ? L($"ca. {FormatSize(required)} (frei: {FormatSize(available)})", $"около {FormatSize(required)} (свободно: {FormatSize(available)})")
+        : L($"ca. {FormatSize(required)}", $"около {FormatSize(required)}");
+
+    public static string SetupDownloading(long done, long? total, double bytesPerSecond, TimeSpan? remaining)
+    {
+        var amount = total is { } t ? $"{FormatSize(done)} / {FormatSize(t)}" : FormatSize(done);
+        var speed = bytesPerSecond > 0 ? $" · {FormatSize((long)bytesPerSecond)}{L("/s", "/с")}" : string.Empty;
+        var rest = remaining is { } r ? $" · {FormatRemaining(r)}" : string.Empty;
+        return L($"Herunterladen: {amount}{speed}{rest}", $"Загрузка: {amount}{speed}{rest}");
+    }
+
+    public static string SetupExtracting(double? fraction) => fraction is { } f
+        ? L($"Entpacken: {(int)Math.Floor(f * 100)} %", $"Распаковка: {(int)Math.Floor(f * 100)} %")
+        : L("Entpacken …", "Распаковка…");
+
+    public static string SetupConfirmCancel => L(
+        "Einrichtung abbrechen? Der bisherige Download bleibt erhalten und wird beim nächsten Mal fortgesetzt.",
+        "Прервать установку? Уже загруженная часть сохранится, и загрузка продолжится в следующий раз.");
+
+    public static string SetupErrorText(Core.Setup.SetupError error, string installFolder, long required, long? free) => error switch
+    {
+        Core.Setup.SetupError.NotEnoughSpace => L(
+            $"Auf dem Laufwerk ist nicht genug Platz frei: Benötigt werden ca. {FormatSize(required)}, frei sind {FormatSize(free ?? 0)}. " +
+            "Bitte Platz schaffen (z. B. Papierkorb leeren) und erneut versuchen.",
+            $"На диске недостаточно места: нужно около {FormatSize(required)}, свободно {FormatSize(free ?? 0)}. " +
+            "Освободите место (например, очистите корзину) и повторите попытку."),
+        Core.Setup.SetupError.DownloadFailed => L(
+            "Der Download ist fehlgeschlagen. Bitte die Internetverbindung prüfen und „Erneut versuchen“ klicken – " +
+            "der Download wird dort fortgesetzt, wo er aufgehört hat.",
+            "Загрузка не удалась. Проверьте подключение к интернету и нажмите «Повторить» – " +
+            "загрузка продолжится с того места, где остановилась."),
+        Core.Setup.SetupError.WrongFile => L(
+            "Die heruntergeladene Datei ist unvollständig oder beschädigt. Bitte „Erneut versuchen“ klicken.",
+            "Загруженный файл неполный или повреждён. Нажмите «Повторить»."),
+        Core.Setup.SetupError.ExtractFailed => L(
+            "Das Entpacken ist fehlgeschlagen. Bitte freien Speicherplatz prüfen und erneut versuchen.",
+            "Распаковка не удалась. Проверьте свободное место на диске и повторите попытку."),
+        Core.Setup.SetupError.ExeMissing => L(
+            "Nach dem Entpacken fehlt faster-whisper-xxl.exe. Häufig entfernt ein Virenschutzprogramm die Datei fälschlicherweise. " +
+            $"Bitte im Virenschutz die Quarantäne prüfen oder eine Ausnahme für diesen Ordner anlegen und erneut versuchen: {installFolder}",
+            "После распаковки отсутствует faster-whisper-xxl.exe. Часто антивирус ошибочно удаляет этот файл. " +
+            $"Проверьте карантин антивируса или добавьте исключение для этой папки и повторите попытку: {installFolder}"),
+        Core.Setup.SetupError.ExeDoesNotStart => L(
+            "faster-whisper-xxl.exe startet nicht. Möglicherweise blockiert ein Virenschutzprogramm das Programm. " +
+            $"Bitte eine Ausnahme für diesen Ordner anlegen und erneut versuchen: {installFolder}",
+            "faster-whisper-xxl.exe не запускается. Возможно, его блокирует антивирус. " +
+            $"Добавьте исключение для этой папки и повторите попытку: {installFolder}"),
+        _ => UnexpectedError(error.ToString()),
+    };
+
+    public static string SetupDetail(string detail) => L($"Details: {detail}", $"Подробности: {detail}");
+
+    /// <summary>"1,36 GB" / "1,36 ГБ", "512 MB" / "512 МБ".</summary>
+    public static string FormatSize(long bytes)
+    {
+        var culture = System.Globalization.CultureInfo.GetCultureInfo(Language == UiLanguage.Russian ? "ru-RU" : "de-DE");
+        const double gigabyte = 1024d * 1024 * 1024;
+        const double megabyte = 1024d * 1024;
+        return bytes >= gigabyte
+            ? (bytes / gigabyte).ToString("0.00", culture) + L(" GB", " ГБ")
+            : (bytes / megabyte).ToString("0", culture) + L(" MB", " МБ");
+    }
+
+    /// <summary>"noch ca. 3 Min." / "осталось около 3 мин."</summary>
+    public static string FormatRemaining(TimeSpan remaining)
+    {
+        if (remaining < TimeSpan.FromMinutes(1))
+            return L("noch unter 1 Min.", "осталось меньше минуты");
+
+        var minutes = (int)Math.Ceiling(remaining.TotalMinutes);
+        return L($"noch ca. {minutes} Min.", $"осталось около {minutes} мин.");
+    }
 
     // ----- Formatting (language-neutral) -----
 

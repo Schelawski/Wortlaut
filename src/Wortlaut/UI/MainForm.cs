@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using Wortlaut.Core;
+using Wortlaut.Core.Setup;
 
 namespace Wortlaut.UI;
 
@@ -14,6 +15,7 @@ internal sealed partial class MainForm : Form, IViewHost
 
     private readonly TextBox _exePathBox = new() { Anchor = AnchorStyles.Left | AnchorStyles.Right };
     private readonly Button _browseExeButton = UiStyle.CreateButton(UiText.Browse);
+    private readonly Button _setupButton = UiStyle.CreateButton(UiText.SetUp);
     private readonly StatusBadge _exeStatus = new() { Anchor = AnchorStyles.Left, Margin = new Padding(6, 3, 3, 3) };
     private readonly ComboBox _modelBox = new() { DropDownStyle = ComboBoxStyle.DropDown, Width = 150 };
     private readonly ComboBox _deviceBox = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 90 };
@@ -186,8 +188,9 @@ internal sealed partial class MainForm : Form, IViewHost
 
     private TableLayoutPanel BuildSettingsGrid()
     {
-        var grid = new TableLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, ColumnCount = 3, RowCount = 3 };
+        var grid = new TableLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, ColumnCount = 4, RowCount = 3 };
         grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        grid.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         grid.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         grid.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         for (var i = 0; i < 3; i++)
@@ -195,10 +198,12 @@ internal sealed partial class MainForm : Form, IViewHost
 
         var exeLabel = UiStyle.CreateCaption(UiText.ExePathLabel);
         grid.Controls.Add(exeLabel, 0, 0);
-        grid.SetColumnSpan(exeLabel, 3);
+        grid.SetColumnSpan(exeLabel, 4);
         grid.Controls.Add(_exePathBox, 0, 1);
         grid.Controls.Add(_browseExeButton, 1, 1);
         grid.Controls.Add(_exeStatus, 2, 1);
+        // Only shown while no faster-whisper-xxl.exe is found (see UpdateExeStatus).
+        grid.Controls.Add(_setupButton, 3, 1);
 
         var options = new TableLayoutPanel { AutoSize = true, ColumnCount = 5, RowCount = 2, Margin = new Padding(0, 4, 0, 0) };
         for (var i = 0; i < 5; i++)
@@ -224,7 +229,7 @@ internal sealed partial class MainForm : Form, IViewHost
         options.Controls.Add(_wholeSentencesBox, fields.Length, 1);
 
         grid.Controls.Add(options, 0, 2);
-        grid.SetColumnSpan(options, 3);
+        grid.SetColumnSpan(options, 4);
         return grid;
     }
 
@@ -268,6 +273,9 @@ internal sealed partial class MainForm : Form, IViewHost
             OnWhisperSettingsChanged();
         };
         _browseExeButton.Click += (_, _) => BrowseForExe();
+        UiStyle.MakePrimary(_setupButton);
+        _setupButton.Margin = new Padding(9, 3, 3, 3);
+        _setupButton.Click += (_, _) => RunSetup();
         _modelBox.TextChanged += (_, _) =>
         {
             Settings.Model = _modelBox.Text.Trim();
@@ -337,10 +345,20 @@ internal sealed partial class MainForm : Form, IViewHost
 
     private void UpdateExeStatus()
     {
-        if (FasterWhisperLocator.Exists(Settings.ExePath))
+        var found = FasterWhisperLocator.Exists(Settings.ExePath);
+        if (found)
             _exeStatus.SetState(UiText.ExeFound, UiStyle.Success);
         else
             _exeStatus.SetState(UiText.ExeNotFound, UiStyle.Danger);
+        _setupButton.Visible = !found;
+    }
+
+    /// <summary>Downloads and installs Faster-Whisper-XXL into %LOCALAPPDATA%\Wortlaut.</summary>
+    private void RunSetup()
+    {
+        using var dialog = new SetupDialog(FasterWhisperInstaller.DefaultRoot);
+        if (dialog.ShowDialog(this) == DialogResult.OK && dialog.InstalledExePath is { } exePath)
+            _exePathBox.Text = exePath; // updates the settings and the "gefunden" badge
     }
 
     private void OnWhisperSettingsChanged()
