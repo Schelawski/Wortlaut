@@ -90,6 +90,7 @@ public class HelpDocumentTests
 
     [Theory]
     [InlineData("de")]
+    [InlineData("en")]
     [InlineData("ru")]
     public void EmbeddedHelpHasAllTopicsInOrder(string language)
     {
@@ -105,6 +106,7 @@ public class HelpDocumentTests
 
     [Theory]
     [InlineData("de")]
+    [InlineData("en")]
     [InlineData("ru")]
     public void EmbeddedHelpHasNoBrokenMarkup(string language)
     {
@@ -122,17 +124,26 @@ public class HelpDocumentTests
     }
 
     [Fact]
-    public void GermanHelpIsGermanAndRussianHelpIsRussian()
+    public void EachHelpIsInItsLanguage()
     {
         static bool Cyrillic(string text) => text.Any(c => c is >= 'Ѐ' and <= 'ӿ');
+        static string AllText(HelpTopic topic) => topic.Title + string.Concat(topic.Blocks.SelectMany(b => b.Spans).Select(s => s.Text));
 
         var german = HelpDocument.Load("de");
         var russian = HelpDocument.Load("ru");
+        var english = HelpDocument.Load("en");
 
-        Assert.All(german.Topics, topic => Assert.False(Cyrillic(topic.Title + string.Concat(topic.Blocks.SelectMany(b => b.Spans).Select(s => s.Text))), topic.Id));
+        Assert.All(german.Topics, topic => Assert.False(Cyrillic(AllText(topic)), topic.Id));
         Assert.All(russian.Topics, topic => Assert.True(Cyrillic(topic.Title), topic.Id));
-        // Both translations cover the same ground: similar number of paragraphs and list items per topic.
+        Assert.All(english.Topics, topic =>
+        {
+            Assert.False(Cyrillic(AllText(topic)), topic.Id);
+            Assert.False(AllText(topic).Any(c => "äöüÄÖÜß„".Contains(c)), $"English topic {topic.Id} looks German.");
+        });
+
+        // The translations cover the same ground: the same number of paragraphs and list items per topic.
         Assert.Equal(german.Topics.Select(t => t.Blocks.Count), russian.Topics.Select(t => t.Blocks.Count));
+        Assert.Equal(german.Topics.Select(t => t.Blocks.Count), english.Topics.Select(t => t.Blocks.Count));
     }
 }
 
@@ -144,6 +155,7 @@ public sealed class HelpMatchesUiTests : IDisposable
 
     [Theory]
     [InlineData("de")]
+    [InlineData("en")]
     [InlineData("ru")]
     public void HelpUsesTheButtonNamesOfTheUi(string code)
     {

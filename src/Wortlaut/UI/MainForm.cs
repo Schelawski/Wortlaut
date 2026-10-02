@@ -25,7 +25,7 @@ internal sealed partial class MainForm : Form, IViewHost
     private readonly ComboBox _modelBox = new() { DropDownStyle = ComboBoxStyle.DropDown, Width = 135 };
     // Narrow boxes keep the settings in one line; the opened lists are as wide as their longest entry (see FitDropDownWidth).
     private readonly ComboBox _deviceBox = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 72 };
-    private readonly ComboBox _languageBox = new() { DropDownStyle = ComboBoxStyle.DropDown, Width = 145 };
+    private readonly ComboBox _languageBox = new() { DropDownStyle = ComboBoxStyle.DropDown, Width = 132 };
     private readonly ComboBox _formatBox = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 112 };
     private readonly CheckBox _wholeSentencesBox = new() { Text = UiText.WholeSentences, AutoSize = true, Anchor = AnchorStyles.Left };
     private readonly ToolTip _toolTip = new() { AutoPopDelay = 15000 };

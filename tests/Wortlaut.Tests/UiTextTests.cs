@@ -15,8 +15,19 @@ public sealed class UiTextCollection;
 [Collection(nameof(UiTextCollection))]
 public sealed class UiTextTests : IDisposable
 {
-    // Texts that are the same in both languages on purpose.
+    // Texts that are the same in all languages on purpose.
     private static readonly HashSet<string> LanguageNeutralTexts = [nameof(UiText.SettingsGroup)];
+
+    // Texts that are the same in German and English on purpose (international words).
+    private static readonly HashSet<string> SameInGermanAndEnglish =
+    [
+        nameof(UiText.SettingsGroup),
+        nameof(UiText.FormatLabel),
+        nameof(UiText.ColumnStatus),
+        nameof(UiText.ModelColumnStatus),
+        nameof(UiText.SetupVersionLabel),
+        nameof(UiText.SetupDownloadLabel),
+    ];
 
     public UiTextTests() => UiText.Language = UiLanguage.German;
 
@@ -30,7 +41,7 @@ public sealed class UiTextTests : IDisposable
 
     [Theory]
     [MemberData(nameof(TextProperties))]
-    public void EveryTextExistsInBothLanguages(string propertyName)
+    public void EveryTextExistsInAllLanguages(string propertyName)
     {
         var property = typeof(UiText).GetProperty(propertyName)!;
 
@@ -38,15 +49,24 @@ public sealed class UiTextTests : IDisposable
         var german = (string)property.GetValue(null)!;
         UiText.Language = UiLanguage.Russian;
         var russian = (string)property.GetValue(null)!;
+        UiText.Language = UiLanguage.English;
+        var english = (string)property.GetValue(null)!;
 
         Assert.False(string.IsNullOrWhiteSpace(german));
         Assert.False(string.IsNullOrWhiteSpace(russian));
+        Assert.False(string.IsNullOrWhiteSpace(english));
         Assert.False(ContainsCyrillic(german), $"German text of {propertyName} contains Cyrillic: {german}");
         if (!LanguageNeutralTexts.Contains(propertyName))
         {
             // Catches a German text pasted into the Russian slot.
             Assert.True(ContainsCyrillic(russian), $"Russian text of {propertyName} is not Russian: {russian}");
         }
+
+        // Catches German or Russian text pasted into the English slot.
+        Assert.False(ContainsCyrillic(english), $"English text of {propertyName} contains Cyrillic: {english}");
+        Assert.False(english.Any(c => "äöüÄÖÜß„".Contains(c)), $"English text of {propertyName} looks German: {english}");
+        if (!SameInGermanAndEnglish.Contains(propertyName))
+            Assert.NotEqual(german, english);
     }
 
     [Fact]
@@ -167,6 +187,10 @@ public sealed class UiTextTests : IDisposable
     [InlineData("ru", "ru")]
     [InlineData("ru", "de")]
     [InlineData("ru", "en")]
+    [InlineData("en", "ru")]
+    [InlineData("en", "de")]
+    [InlineData("en", "en")]
+    [InlineData("en", "auto")]
     [InlineData("ru", "auto")]
     public void KnownLanguagesRoundTrip(string uiLanguage, string code)
     {
@@ -190,6 +214,7 @@ public sealed class UiTextTests : IDisposable
 
     [Theory]
     [InlineData("de")]
+    [InlineData("en")]
     [InlineData("ru")]
     public void StatusBarSummaryUsesLanguageNeutralCodes(string uiLanguage)
     {
@@ -238,6 +263,8 @@ public sealed class UiTextTests : IDisposable
     [InlineData("de", "ru-RU", "de")]
     [InlineData("ru", "de-DE", "ru")]
     [InlineData("RU", "en-US", "ru")]
+    [InlineData("en", "de-DE", "en")]
+    [InlineData("EN", "ru-RU", "en")]
     [InlineData("fr", "ru-RU", "ru")]
     public void StoredChoiceWinsOverWindowsLanguage(string storedCode, string windowsCulture, string expected)
     {
@@ -259,7 +286,40 @@ public sealed class UiTextTests : IDisposable
     [Fact]
     public void LanguagesAreListedInTheirOwnLanguage()
     {
-        Assert.Equal(["Deutsch", "Русский"], UiLanguages.All.Select(UiLanguages.NativeName));
+        Assert.Equal(["Deutsch", "English", "Русский"], UiLanguages.All.Select(UiLanguages.NativeName));
+    }
+
+    [Theory]
+    [InlineData(1, "1 file in D:\\Videos")]
+    [InlineData(2, "2 files in D:\\Videos")]
+    public void EnglishFileCountUsesSingularAndPlural(int count, string expected)
+    {
+        UiText.Language = UiLanguage.English;
+
+        Assert.Equal(expected, UiText.LogFolderLoaded(count, @"D:\Videos"));
+    }
+
+    [Theory]
+    [InlineData("de", "1,36 GB")]
+    [InlineData("ru", "1,36 ГБ")]
+    [InlineData("en", "1.36 GB")]
+    public void SizesUseTheNumberFormatOfTheLanguage(string code, string expected)
+    {
+        UiText.Language = UiLanguages.FromCode(code)!.Value;
+
+        Assert.Equal(expected, UiText.FormatSize(1_460_000_000));
+    }
+
+    [Fact]
+    public void EnglishLanguageNamesAndFormatsAreTranslated()
+    {
+        UiText.Language = UiLanguage.English;
+
+        Assert.Equal("Russian (ru)", UiText.LanguageName("ru"));
+        Assert.Equal("Detect automatically", UiText.LanguageName(WhisperSettings.AutoLanguage));
+        Assert.Equal(["Text (.txt)", "JSON (.json)", "Subtitles (.srt)", "WebVTT (.vtt)"], OutputFormats.All.Select(UiText.FormatName));
+        Assert.Equal("ru", MainForm.ParseLanguage("Russian (ru)"));
+        Assert.Equal("auto", MainForm.ParseLanguage("detect automatically"));
     }
 
     [Fact]

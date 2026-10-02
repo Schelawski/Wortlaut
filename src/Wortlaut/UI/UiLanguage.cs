@@ -7,6 +7,7 @@ internal enum UiLanguage
 {
     German,
     Russian,
+    English,
 }
 
 /// <summary>
@@ -14,12 +15,14 @@ internal enum UiLanguage
 /// </summary>
 internal static class UiLanguages
 {
-    public static IReadOnlyList<UiLanguage> All { get; } = [UiLanguage.German, UiLanguage.Russian];
+    /// <summary>In the order shown in the language menus.</summary>
+    public static IReadOnlyList<UiLanguage> All { get; } = [UiLanguage.German, UiLanguage.English, UiLanguage.Russian];
 
     /// <summary>Code stored in the settings file.</summary>
     public static string Code(UiLanguage language) => language switch
     {
         UiLanguage.Russian => "ru",
+        UiLanguage.English => "en",
         _ => "de",
     };
 
@@ -27,6 +30,7 @@ internal static class UiLanguages
     public static string NativeName(UiLanguage language) => language switch
     {
         UiLanguage.Russian => "Русский",
+        UiLanguage.English => "English",
         _ => "Deutsch",
     };
 
@@ -35,10 +39,14 @@ internal static class UiLanguages
     {
         "de" => UiLanguage.German,
         "ru" => UiLanguage.Russian,
+        "en" => UiLanguage.English,
         _ => null,
     };
 
-    /// <summary>Russian for a Russian Windows display language, German otherwise.</summary>
+    /// <summary>
+    /// Russian for a Russian Windows display language, German otherwise – German is Wortlaut's home language.
+    /// English is chosen in the language menu.
+    /// </summary>
     public static UiLanguage FromCulture(CultureInfo culture) =>
         culture.TwoLetterISOLanguageName == "ru" ? UiLanguage.Russian : UiLanguage.German;
 
@@ -54,7 +62,12 @@ internal static class UiLanguages
     {
         UiText.Language = language;
 
-        var culture = CultureInfo.GetCultureInfo(language == UiLanguage.Russian ? "ru-RU" : "de-DE");
+        var culture = CultureInfo.GetCultureInfo(language switch
+        {
+            UiLanguage.Russian => "ru-RU",
+            UiLanguage.English => "en-US",
+            _ => "de-DE",
+        });
         CultureInfo.DefaultThreadCurrentUICulture = culture;
         CultureInfo.CurrentUICulture = culture;
     }

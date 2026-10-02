@@ -3,6 +3,10 @@
 Automated tests cover the core with a fake runner. These manual checks cover the real
 `faster-whisper-xxl.exe` and the user interface. Allow about 15 minutes.
 
+Button and label names refer to the German user interface (the default). For the other languages, switch at
+the bottom right of the main window and repeat the visual checks: all texts translated, nothing cut off,
+the settings line fits into one line at the default window size (except Russian at 125 %).
+
 ## Preparation
 
 1. Publish the app: `dotnet publish src/Wortlaut -c Release`.
