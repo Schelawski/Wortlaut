@@ -1,6 +1,8 @@
 using System.Globalization;
 using Wortlaut.Core;
+using Wortlaut.Core.Setup;
 using Wortlaut.UI;
+using Wortlaut.UI.Wizard;
 
 namespace Wortlaut;
 
@@ -24,6 +26,19 @@ internal static class Program
         var settingsStore = new SettingsStore();
         var settings = settingsStore.Load();
         MainForm.WindowLayout? layout = null;
+
+        // First start (no faster-whisper-xxl.exe yet) or a wizard that was closed early: guide through the setup.
+        var exeFound = FasterWhisperLocator.Exists(settings.ExePath) || FasterWhisperLocator.FindDefault() is not null;
+        if (SetupWizardFlow.ShouldShowAtStartup(settings.WizardResumeStep, exeFound))
+        {
+            UiLanguages.Apply(UiLanguages.Resolve(settings.UiLanguage, windowsCulture));
+            using var wizard = new SetupWizard(settingsStore, settings, FasterWhisperInstaller.DefaultRoot, openedFromMainWindow: false);
+            Application.Run(wizard);
+
+            // The copy in the user folder has been started; this one is no longer needed.
+            if (wizard.Outcome == WizardOutcome.StartedCopy)
+                return;
+        }
 
         // Switching the UI language closes the window; it is then rebuilt with the new texts.
         while (true)

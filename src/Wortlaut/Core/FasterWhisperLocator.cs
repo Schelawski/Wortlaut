@@ -14,8 +14,11 @@ public static class FasterWhisperLocator
     /// Searches the folder of Wortlaut.exe, the current directory and the folder Wortlaut installs into
     /// (<c>%LOCALAPPDATA%\Wortlaut</c>), each also with a "Faster-Whisper-XXL" subfolder.
     /// </summary>
-    public static string? FindDefault() =>
-        Find([AppContext.BaseDirectory, Environment.CurrentDirectory, Setup.FasterWhisperInstaller.DefaultRoot]);
+    public static string? FindDefault() => FindDefault(Setup.FasterWhisperInstaller.DefaultRoot);
+
+    /// <summary>Like <see cref="FindDefault()"/>, with <paramref name="installRoot"/> as the install folder.</summary>
+    public static string? FindDefault(string installRoot) =>
+        Find([AppContext.BaseDirectory, Environment.CurrentDirectory, installRoot]);
 
     /// <summary>Returns the first existing faster-whisper-xxl.exe in the given folders.</summary>
     public static string? Find(IEnumerable<string> directories)

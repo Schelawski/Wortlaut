@@ -513,14 +513,115 @@ internal static class UiText
     public static string SetupLicenseLink => L("MIT (frei nutzbar) – Projektseite öffnen", "MIT (свободное использование) – открыть страницу проекта");
     public static string SetupStart => L("Herunterladen und einrichten", "Загрузить и установить");
     public static string SetupRetry => L("Erneut versuchen", "Повторить");
-    public static string SetupFinish => L("Fertig", "Готово");
     public static string SetupLookingUp => L("Suche die neueste Version …", "Поиск последней версии…");
     public static string SetupVerifying => L("Prüfe, ob das Programm startet …", "Проверка запуска программы…");
     public static string SetupCancelling => L("Wird abgebrochen …", "Отмена…");
+    public static string SetupDurationLabel => L("Dauer", "Время");
 
-    public static string SetupDone(string version) => L(
-        $"Fertig! Faster-Whisper-XXL {version} ist eingerichtet. Sie können jetzt Dateien transkribieren.",
-        $"Готово! Faster-Whisper-XXL {version} установлен. Теперь можно расшифровывать файлы.");
+    /// <summary>"etwa 3–14 Minuten (je nach Internetverbindung)".</summary>
+    public static string SetupDuration(TimeSpan fast, TimeSpan slow)
+    {
+        var from = (int)fast.TotalMinutes;
+        var to = (int)slow.TotalMinutes;
+        return from == to
+            ? L($"etwa {from} Min.", $"примерно {from} мин")
+            : L($"etwa {from}–{to} Minuten (je nach Internetverbindung)", $"примерно {from}–{to} мин (зависит от скорости интернета)");
+    }
+
+    // ----- Welcome wizard -----
+
+    public static string WizardStepOf(int step, int count) => L($"Schritt {step} von {count}", $"Шаг {step} из {count}");
+    public static string WizardBack => L("Zurück", "Назад");
+    public static string WizardNext => L("Weiter", "Далее");
+    public static string WizardHaveExe => L("Ich habe Faster-Whisper-XXL schon…", "У меня уже есть Faster-Whisper-XXL…");
+
+    public static string WizardConfirmCancel => L(
+        "Download abbrechen? Bereits Heruntergeladenes bleibt erhalten. Beim nächsten Start von Wortlaut geht es hier weiter.",
+        "Прервать загрузку? Уже загруженное сохранится. При следующем запуске Wortlaut продолжит с этого места.");
+
+    public static string WelcomeTitle => L("Willkommen bei Wortlaut", "Добро пожаловать в Wortlaut");
+
+    public static string WelcomeText => L(
+        "Wortlaut schreibt auf, was in Ihren Video- und Audioaufnahmen gesprochen wird – zum Beispiel " +
+        "bei Vorträgen, Interviews oder Gesprächen.",
+        "Wortlaut записывает текстом то, что говорится в ваших видео- и аудиозаписях, – например, " +
+        "в лекциях, интервью или беседах.");
+
+    public static string WelcomePrivacy => L(
+        "Ihre Aufnahmen bleiben auf Ihrem Computer. Die Spracherkennung läuft vollständig bei Ihnen – " +
+        "nichts wird ins Internet hochgeladen.",
+        "Ваши записи остаются на вашем компьютере. Распознавание речи полностью работает у вас – " +
+        "ничего не загружается в интернет.");
+
+    public static string WelcomeSteps => L(
+        "In wenigen Schritten richtet Wortlaut alles ein:\n" +
+        "1.  das Spracherkennungsprogramm herunterladen\n" +
+        "2.  die Grafikkarte prüfen\n" +
+        "3.  ein Sprachmodell herunterladen\n" +
+        "Das Internet wird nur für diese Downloads gebraucht.",
+        "За несколько шагов Wortlaut всё настроит:\n" +
+        "1.  загрузит программу распознавания речи\n" +
+        "2.  проверит видеокарту\n" +
+        "3.  загрузит языковую модель\n" +
+        "Интернет нужен только для этих загрузок.");
+
+    public static string WelcomeLanguageLabel => L("Sprache der Oberfläche:", "Язык интерфейса:");
+
+    public static string InstallTitle => L("Spracherkennung herunterladen", "Загрузка программы распознавания");
+
+    public static string GraphicsTitle => L("Grafikkarte prüfen", "Проверка видеокарты");
+    public static string GpuApplyAndNext => L("Übernehmen und weiter", "Применить и далее");
+
+    public static string ModelPageTitle => L("Sprachmodell herunterladen", "Загрузка языковой модели");
+
+    public static string ModelPageIntro(string name) => L(
+        $"Zum Schluss braucht Wortlaut ein Sprachmodell – das „Gehirn“ der Spracherkennung. Eingestellt ist „{name}“. " +
+        "Es wird einmalig heruntergeladen und danach immer wieder verwendet.",
+        $"Напоследок Wortlaut нужна языковая модель – «мозг» распознавания речи. Выбрана модель «{name}». " +
+        "Она загружается один раз и затем используется всегда.");
+
+    public static string ModelPageNameLabel => L("Modell", "Модель");
+    public static string ModelLater => L("Später", "Позже");
+
+    public static string ModelPageLaterHint => L(
+        "Mit „Später“ fragt Wortlaut vor der ersten Transkription nach. Weitere Modelle gibt es jederzeit unter „Modelle…“.",
+        "Если нажать «Позже», Wortlaut спросит перед первой расшифровкой. Другие модели доступны в любое время через «Модели…».");
+
+    public static string ModelPageInstalled(string name) =>
+        L($"Das Modell „{name}“ ist bereits vorhanden.", $"Модель «{name}» уже загружена.");
+
+    public static string DoneTitle => L("Fertig", "Готово");
+    public static string DoneHeadline => L("Wortlaut ist bereit.", "Wortlaut готов к работе.");
+
+    public static string DoneText => L(
+        "So geht es los: Ziehen Sie eine Video- oder Audiodatei in das Wortlaut-Fenster und klicken Sie auf " +
+        "„Transkribieren“. Der Text wird neben der Datei gespeichert.\n\n" +
+        "Alle Einstellungen können Sie später im Hauptfenster ändern. Diesen Assistenten finden Sie unten rechts unter „Extras“.",
+        "Как начать: перетащите видео- или аудиофайл в окно Wortlaut и нажмите «Расшифровать». " +
+        "Текст сохранится рядом с файлом.\n\n" +
+        "Все настройки можно позже изменить в главном окне. Этот мастер находится внизу справа в меню «Сервис».");
+
+    public static string DoneModelMissing(string name) => L(
+        $"Das Modell „{name}“ wird vor der ersten Transkription heruntergeladen.",
+        $"Модель «{name}» будет загружена перед первой расшифровкой.");
+
+    public static string DoneCopyOption => L(
+        "Wortlaut in meinen Benutzerordner kopieren und Verknüpfungen auf dem Desktop und im Startmenü anlegen",
+        "Скопировать Wortlaut в мою папку пользователя и создать ярлыки на рабочем столе и в меню «Пуск»");
+
+    public static string DoneCopyHint(string path) => L(
+        $"Dann bleibt Wortlaut nicht im Download-Ordner liegen. Ziel: {path}",
+        $"Тогда Wortlaut не останется в папке загрузок. Папка: {path}");
+
+    public static string DoneStart => L("Erste Datei transkribieren", "Расшифровать первый файл");
+
+    public static string DoneCopyFailed(string reason) => L(
+        $"Wortlaut konnte nicht kopiert werden: {reason}",
+        $"Не удалось скопировать Wortlaut: {reason}");
+
+    public static string ExtrasMenu => L("Extras", "Сервис");
+    public static string ExtrasWizard => L("Einrichtungs-Assistent…", "Мастер настройки…");
+    public static string ExtrasGpu => L("Grafikkarte prüfen…", "Проверить видеокарту…");
 
     public static string SetupVersion(string version, bool isFallback) => isFallback
         ? L($"{version} (GitHub gerade nicht erreichbar – bekannte Version)", $"{version} (GitHub сейчас недоступен – известная версия)")

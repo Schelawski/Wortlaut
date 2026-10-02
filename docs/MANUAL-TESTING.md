@@ -15,11 +15,25 @@ Automated tests cover the core with a fake runner. These manual checks cover the
 
 ## 1. First start
 
+Best done in a **fresh Windows user account** (no `%LOCALAPPDATA%\Wortlaut`, no settings file), with
+`Wortlaut.exe` in that account's `Downloads` folder. Needs about 8 GB of free space and a working internet
+connection.
+
 | Step | Expected |
 |------|----------|
-| Start `Wortlaut.exe`. | Window title "Wortlaut". If `faster-whisper-xxl.exe` is not next to `Wortlaut.exe`, the badge shows **nicht gefunden**. |
-| Click **Durchsuchen…** and select `faster-whisper-xxl.exe`. | Badge switches to **gefunden**. Status bar: `large-v2 · cuda · ru · .txt` and "Einstellungen gespeichert in Wortlaut.settings.json". |
-| Check the folder of `Wortlaut.exe`. | `Wortlaut.settings.json` exists and contains the path. |
+| Start `Wortlaut.exe`. | The wizard "Wortlaut einrichten" opens at "Schritt 1 von 5 – Willkommen bei Wortlaut", in the Windows display language. The green note says that recordings stay on the computer. |
+| Switch the language to **Русский** and back. | All texts of the page and the buttons change immediately. |
+| **Weiter**. | Step 2 shows version, download size (about 1.3 GB), duration ("etwa 3–14 Minuten"), disk space and target `%LOCALAPPDATA%\Wortlaut\Faster-Whisper-XXL`. |
+| **Wortlaut einrichten**, after a few seconds **Abbrechen** → **Ja**. | The wizard closes, then the main window opens with **nicht gefunden**. |
+| Restart `Wortlaut.exe`. | The wizard opens directly at step 2. **Wortlaut einrichten** continues the download (the downloaded size does not start at 0), then extracts and checks the program. |
+| Step 3 appears by itself. | Graphics card result and suggestion (see section 6). **Übernehmen und weiter**. |
+| Step 4: **Herunterladen**. | The model downloads with progress and remaining time; then step 5 appears. |
+| Step 5: leave "Wortlaut in meinen Benutzerordner kopieren …" ticked, **Erste Datei transkribieren**. | Wortlaut restarts from `%LOCALAPPDATA%\Wortlaut\Wortlaut.exe` with the main window: badge **gefunden**, device and model as suggested. "Wortlaut" shortcuts exist on the desktop and in the start menu. |
+| Start Wortlaut again via the desktop shortcut. | The main window opens directly, no wizard. |
+| **Extras → Einrichtungs-Assistent…**, then **Abbrechen** on step 1; restart. | No wizard on the restart (opening it from the menu is not remembered). |
+
+Variant: in step 1 click **Ich habe Faster-Whisper-XXL schon…** and select an existing
+`faster-whisper-xxl.exe` – the wizard continues with step 3.
 
 ## 2. Single file – Text (.txt)
 

@@ -40,6 +40,9 @@ internal sealed partial class MainForm : Form, IViewHost
     private readonly ToolStripStatusLabel _summaryLabel = new();
     private readonly ToolStripStatusLabel _savedLabel = new() { Spring = true, TextAlign = ContentAlignment.MiddleRight };
     private readonly ToolStripDropDownButton _uiLanguageButton = new();
+    private readonly ToolStripDropDownButton _extrasButton = new();
+    private readonly ToolStripMenuItem _extrasGpuItem = new(UiText.ExtrasGpu);
+    private readonly ToolStripMenuItem _extrasModelsItem = new(UiText.ModelsButton);
 
     private readonly SingleFileView _singleFileView;
     private readonly FolderView _folderView;
@@ -157,10 +160,24 @@ internal sealed partial class MainForm : Form, IViewHost
         var statusStrip = new StatusStrip { SizingGrip = true, ShowItemToolTips = true };
         statusStrip.Items.Add(_summaryLabel);
         statusStrip.Items.Add(_savedLabel);
+        statusStrip.Items.Add(BuildExtrasButton());
         statusStrip.Items.Add(BuildUiLanguageButton());
 
         Controls.Add(root);
         Controls.Add(statusStrip);
+    }
+
+    /// <summary>"Extras ▾" in the status bar: the welcome wizard, the graphics card check and the models.</summary>
+    private ToolStripDropDownButton BuildExtrasButton()
+    {
+        _extrasButton.Text = UiText.ExtrasMenu;
+        _extrasButton.DisplayStyle = ToolStripItemDisplayStyle.Text;
+        _extrasButton.DropDownItems.Add(UiText.ExtrasWizard, null, (_, _) => ShowWizard());
+        _extrasButton.DropDownItems.Add(_extrasGpuItem);
+        _extrasButton.DropDownItems.Add(_extrasModelsItem);
+        _extrasGpuItem.Click += (_, _) => ShowGpuCheck();
+        _extrasModelsItem.Click += (_, _) => ShowModels(autoDownload: null);
+        return _extrasButton;
     }
 
     /// <summary>"Deutsch ▾" / "Русский ▾" at the right end of the status bar.</summary>
@@ -309,7 +326,7 @@ internal sealed partial class MainForm : Form, IViewHost
         _browseExeButton.Click += (_, _) => BrowseForExe();
         UiStyle.MakePrimary(_setupButton);
         _setupButton.Margin = new Padding(9, 3, 3, 3);
-        _setupButton.Click += (_, _) => RunSetup();
+        _setupButton.Click += (_, _) => ShowWizard();
         _modelsButton.Click += (_, _) => ShowModels(autoDownload: null);
         _gpuButton.Click += (_, _) => ShowGpuCheck();
         _toolTip.SetToolTip(_gpuButton, UiText.GpuCheckTooltip);
@@ -398,8 +415,8 @@ internal sealed partial class MainForm : Form, IViewHost
         else
             _exeStatus.SetState(UiText.ExeNotFound, UiStyle.Danger);
         _setupButton.Visible = !found;
-        _modelsButton.Enabled = found; // the models live next to faster-whisper-xxl.exe
-        _gpuButton.Enabled = found;    // faster-whisper-xxl.exe performs the check
+        _modelsButton.Enabled = _extrasModelsItem.Enabled = found; // the models live next to faster-whisper-xxl.exe
+        _gpuButton.Enabled = _extrasGpuItem.Enabled = found;       // faster-whisper-xxl.exe performs the check
     }
 
     /// <summary>Checks the graphics card and offers matching device and model settings.</summary>
@@ -456,16 +473,43 @@ internal sealed partial class MainForm : Form, IViewHost
         return ShowModels(model.Name) && WhisperModels.IsInstalled(WhisperModels.ModelsDirectory(settings.ExePath), model.Name);
     }
 
-    /// <summary>Downloads and installs Faster-Whisper-XXL into %LOCALAPPDATA%\Wortlaut.</summary>
-    private void RunSetup()
+    /// <summary>
+    /// The welcome wizard: downloads Faster-Whisper-XXL into %LOCALAPPDATA%\Wortlaut, checks the graphics card and
+    /// downloads the model. It changes <see cref="Settings"/> directly; the controls are updated afterwards.
+    /// </summary>
+    private void ShowWizard()
     {
-        using var dialog = new SetupDialog(FasterWhisperInstaller.DefaultRoot);
-        if (dialog.ShowDialog(this) != DialogResult.OK || dialog.InstalledExePath is not { } exePath)
+        if (_isRunning)
             return;
 
-        _exePathBox.Text = exePath; // updates the settings and the "gefunden" badge
-        // Right after the setup the user does not know yet whether "cuda" fits this computer.
-        ShowGpuCheck();
+        SaveSettings();
+        using var wizard = new Wizard.SetupWizard(_settingsStore, Settings, FasterWhisperInstaller.DefaultRoot, openedFromMainWindow: true);
+        wizard.ShowDialog(this);
+
+        if (wizard.Outcome == Wizard.WizardOutcome.StartedCopy)
+        {
+            Close(); // the copy in the user folder is running now
+            return;
+        }
+
+        if (wizard.LanguageChanged)
+        {
+            // The texts of this window are fixed at creation: rebuild it in the new language.
+            LanguageChangeRequested = true;
+            Close();
+            return;
+        }
+
+        ReloadWhisperSettings();
+    }
+
+    /// <summary>Shows settings that were changed outside this window (by the wizard).</summary>
+    private void ReloadWhisperSettings()
+    {
+        _exePathBox.Text = Settings.ExePath;
+        UpdateExeStatus();
+        ApplyDeviceAndModel(Settings.Device, Settings.Model);
+        OnWhisperSettingsChanged();
     }
 
     private void OnWhisperSettingsChanged()
@@ -635,6 +679,7 @@ internal sealed partial class MainForm : Form, IViewHost
     {
         _settingsGroup.Enabled = runningView is null;
         _uiLanguageButton.Enabled = runningView is null;
+        _extrasButton.Enabled = runningView is null;
         foreach (var view in _views)
         {
             view.SetRunState(runningView is null

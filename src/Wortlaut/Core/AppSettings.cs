@@ -38,6 +38,12 @@ public sealed class AppSettings
     /// </summary>
     public string UiLanguage { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Page of the welcome wizard that was open when it was closed before the end; it continues there on the
+    /// next start. <c>null</c> once the wizard was finished (or never started).
+    /// </summary>
+    public Setup.WizardStep? WizardResumeStep { get; set; }
+
     public WhisperSettings ToWhisperSettings() => new()
     {
         ExePath = ExePath.Trim(),
@@ -60,5 +66,7 @@ public sealed class AppSettings
         LastFile ??= string.Empty;
         LastFolder ??= string.Empty;
         UiLanguage ??= string.Empty;
+        if (WizardResumeStep is { } step && !Enum.IsDefined(step))
+            WizardResumeStep = null;
     }
 }

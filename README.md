@@ -42,15 +42,10 @@ The user interface is available in German and Russian.
 ## Getting started
 
 1. Get `Wortlaut.exe` (see [Build](#build)) and put it into any folder.
-2. Start it. On the first start Wortlaut looks for `faster-whisper-xxl.exe` next to `Wortlaut.exe`,
-   in the current directory and in `%LOCALAPPDATA%\Wortlaut` (also in a `Faster-Whisper-XXL` subfolder).
-   If it is not found, the badge next to the path shows **nicht gefunden** and two options appear:
-   - **Wortlaut einrichten** downloads the newest Faster-Whisper-XXL from its
-     [official GitHub release](https://github.com/Purfview/whisper-standalone-win/releases) (about 1.4 GB,
-     about 4.5 GB unpacked) and installs it into `%LOCALAPPDATA%\Wortlaut\Faster-Whisper-XXL` – no
-     administrator rights needed. The download can be cancelled and continues where it stopped; the free
-     disk space is checked first, and the program is test-started before it is used.
-   - **Durchsuchen…** selects an existing installation.
+2. Start it. Wortlaut looks for `faster-whisper-xxl.exe` next to `Wortlaut.exe`, in the current directory
+   and in `%LOCALAPPDATA%\Wortlaut` (also in a `Faster-Whisper-XXL` subfolder). If it is not found, the
+   [welcome wizard](#welcome-wizard) sets everything up. With an existing installation the main window opens
+   directly.
 3. Choose the settings in the **Faster-Whisper** box:
 
    | Setting  | Values                                                                        |
@@ -63,6 +58,28 @@ The user interface is available in German and Russian.
 
    "Text" is plain text without timestamps (with "Ganze Sätze": one sentence per line). The status bar
    at the bottom shows the active settings, e.g. `large-v2 · cuda · ru · .txt`.
+
+### Welcome wizard
+
+On the first start (no `faster-whisper-xxl.exe` found) a wizard guides through the setup in five steps:
+
+1. **Willkommen** – choose the UI language (Deutsch/Русский). Your recordings stay on your computer.
+2. **Spracherkennung herunterladen** – version, download size, rough duration, required disk space and
+   target, then **Wortlaut einrichten** downloads the newest Faster-Whisper-XXL from its
+   [official GitHub release](https://github.com/Purfview/whisper-standalone-win/releases) (about 1.4 GB,
+   about 4.5 GB unpacked) into `%LOCALAPPDATA%\Wortlaut\Faster-Whisper-XXL` – no administrator rights needed.
+   The free disk space is checked first, and the program is test-started before it is used.
+3. **Grafikkarte prüfen** – see [Graphics card](#graphics-card); the suggestion is applied with one click.
+4. **Sprachmodell herunterladen** – the selected model with progress (or **Später**: Wortlaut then asks
+   before the first transcription).
+5. **Fertig** – **Erste Datei transkribieren** opens the main window. If Wortlaut runs from the downloads
+   folder, it offers to copy itself to `%LOCALAPPDATA%\Wortlaut` and to create shortcuts on the desktop and
+   in the start menu.
+
+**Ich habe Faster-Whisper-XXL schon…** selects an existing installation and skips the download. The wizard
+can be closed at any time: downloads keep what they have and continue, and on the next start the wizard
+opens at the same step. Later it is available under **Extras → Einrichtungs-Assistent…** at the bottom
+right of the main window (also via **Wortlaut einrichten** while no installation is found).
 
 ### Models
 
@@ -85,7 +102,7 @@ Model names typed by hand are passed to faster-whisper unchanged; it downloads t
 ### Graphics card
 
 **Prüfen…** next to the device box checks which graphics card faster-whisper can use and suggests matching
-settings. Wortlaut runs this check by itself right after **Wortlaut einrichten**.
+settings (also under **Extras → Grafikkarte prüfen…**). The welcome wizard runs this check as step 3.
 
 | Result | Suggestion |
 |--------|------------|
