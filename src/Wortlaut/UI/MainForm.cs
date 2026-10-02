@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using Wortlaut.Core;
 using Wortlaut.Core.Gpu;
+using Wortlaut.Core.Help;
 using Wortlaut.Core.Models;
 using Wortlaut.Core.Setup;
 
@@ -25,7 +26,7 @@ internal sealed partial class MainForm : Form, IViewHost
     // Narrow boxes keep the settings in one line; the opened lists are as wide as their longest entry (see FitDropDownWidth).
     private readonly ComboBox _deviceBox = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 72 };
     private readonly ComboBox _languageBox = new() { DropDownStyle = ComboBoxStyle.DropDown, Width = 145 };
-    private readonly ComboBox _formatBox = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 120 };
+    private readonly ComboBox _formatBox = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 112 };
     private readonly CheckBox _wholeSentencesBox = new() { Text = UiText.WholeSentences, AutoSize = true, Anchor = AnchorStyles.Left };
     private readonly ToolTip _toolTip = new() { AutoPopDelay = 15000 };
     private readonly GroupBox _settingsGroup = new()
@@ -160,11 +161,47 @@ internal sealed partial class MainForm : Form, IViewHost
         var statusStrip = new StatusStrip { SizingGrip = true, ShowItemToolTips = true };
         statusStrip.Items.Add(_summaryLabel);
         statusStrip.Items.Add(_savedLabel);
+        var helpButton = new ToolStripButton("?  " + UiText.HelpButton) { ToolTipText = UiText.HelpButtonTooltip, DisplayStyle = ToolStripItemDisplayStyle.Text };
+        helpButton.Click += (_, _) => HelpForm.Open(this, HelpTopicForFocus());
+        statusStrip.Items.Add(helpButton);
         statusStrip.Items.Add(BuildExtrasButton());
         statusStrip.Items.Add(BuildUiLanguageButton());
 
         Controls.Add(root);
         Controls.Add(statusStrip);
+    }
+
+    protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+    {
+        if (keyData == Keys.F1)
+        {
+            HelpForm.Open(this, HelpTopicForFocus());
+            return true;
+        }
+
+        return base.ProcessCmdKey(ref msg, keyData);
+    }
+
+    /// <summary>The help topic for the control that has the focus (F1), e.g. "Modelle" in the model box.</summary>
+    private string HelpTopicForFocus()
+    {
+        for (Control? control = ActiveControl; control is not null; control = (control as ContainerControl)?.ActiveControl)
+        {
+            if (control == _modelBox || control == _modelsButton)
+                return HelpTopics.Models;
+            if (control == _deviceBox || control == _gpuButton)
+                return HelpTopics.Device;
+            if (control == _languageBox)
+                return HelpTopics.Language;
+            if (control == _formatBox || control == _wholeSentencesBox)
+                return HelpTopics.Formats;
+            if (control == _folderView)
+                return HelpTopics.Folder;
+            if (control == _singleFileView)
+                return HelpTopics.FirstSteps;
+        }
+
+        return _tabs.SelectedTab == _folderPage ? HelpTopics.Folder : HelpTopics.FirstSteps;
     }
 
     /// <summary>"Extras ▾" in the status bar: the welcome wizard, the graphics card check and the models.</summary>
@@ -241,13 +278,19 @@ internal sealed partial class MainForm : Form, IViewHost
         options.Resize += (_, _) => FitHeight();
         options.ControlAdded += (_, _) => FitHeight();
 
-        options.Controls.Add(Field(UiText.ModelLabel, WithButton(_modelBox, _modelsButton)));
-        options.Controls.Add(Field(UiText.DeviceLabel, WithButton(_deviceBox, _gpuButton)));
-        options.Controls.Add(Field(UiText.LanguageLabel, _languageBox));
-        options.Controls.Add(Field(UiText.FormatLabel, _formatBox));
-        // Next to the format, because it only affects some formats (see tooltip).
-        _wholeSentencesBox.Margin = new Padding(3, 6, 3, 3);
-        options.Controls.Add(Field(string.Empty, _wholeSentencesBox));
+        options.Controls.Add(Field(UiText.ModelLabel, WithButton(_modelBox, _modelsButton), Badge(HelpTopics.Models, UiText.HelpTipModel)));
+        options.Controls.Add(Field(UiText.DeviceLabel, WithButton(_deviceBox, _gpuButton), Badge(HelpTopics.Device, UiText.HelpTipDevice)));
+        options.Controls.Add(Field(UiText.LanguageLabel, _languageBox, Badge(HelpTopics.Language, UiText.HelpTipLanguage)));
+        options.Controls.Add(Field(UiText.FormatLabel, _formatBox, Badge(HelpTopics.Formats, UiText.HelpTipFormat)));
+
+        // Next to the format, because it only affects some formats; the "?" sits right after the checkbox.
+        _wholeSentencesBox.Margin = new Padding(3, 6, 0, 3);
+        var wholeSentences = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0) };
+        wholeSentences.Controls.Add(_wholeSentencesBox);
+        var wholeSentencesBadge = Badge(HelpTopics.Formats, UiText.WholeSentencesTooltip);
+        wholeSentencesBadge.Margin = new Padding(0, 8, 0, 0);
+        wholeSentences.Controls.Add(wholeSentencesBadge);
+        options.Controls.Add(Field(string.Empty, wholeSentences));
 
         grid.Controls.Add(options, 0, 2);
         grid.SetColumnSpan(options, 4);
@@ -267,14 +310,28 @@ internal sealed partial class MainForm : Form, IViewHost
         return cell;
     }
 
-    /// <summary>A caption above a control, as one block of the settings line.</summary>
-    private static TableLayoutPanel Field(string caption, Control control)
+    private HelpBadge Badge(string topicId, string tip) => new(topicId, tip, _toolTip);
+
+    /// <summary>A caption (with an optional "?") above a control, as one block of the settings line.</summary>
+    private static TableLayoutPanel Field(string caption, Control control, HelpBadge? badge = null)
     {
-        var field = new TableLayoutPanel { AutoSize = true, ColumnCount = 1, RowCount = 2, Margin = new Padding(0, 0, 9, 0) };
+        var field = new TableLayoutPanel { AutoSize = true, ColumnCount = 1, RowCount = 2, Margin = new Padding(0, 0, 7, 0) };
         field.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         field.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         var label = UiStyle.CreateCaption(caption.Length == 0 ? " " : caption);
-        field.Controls.Add(label, 0, 0);
+        if (badge is null)
+        {
+            field.Controls.Add(label, 0, 0);
+        }
+        else
+        {
+            var captionRow = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0) };
+            label.Margin = label.Margin with { Right = 2 };
+            captionRow.Controls.Add(label);
+            captionRow.Controls.Add(badge);
+            field.Controls.Add(captionRow, 0, 0);
+        }
+
         if (control is ComboBox)
             control.Margin = new Padding(3);
         field.Controls.Add(control, 0, 1);

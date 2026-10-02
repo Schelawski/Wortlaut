@@ -38,6 +38,12 @@
     <InternalsVisibleTo Include="Wortlaut.Tests" />
   </ItemGroup>
 
+  <!-- Help texts, one Markdown file per UI language (see Core/Help/HelpDocument.cs).
+       WithCulture=false: "help.ru.md" is not a satellite resource, both stay inside Wortlaut.exe. -->
+  <ItemGroup>
+    <EmbeddedResource Include="Help\help.*.md" LogicalName="Wortlaut.Help.%(Filename)%(Extension)" WithCulture="false" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="SharpCompress" Version="0.50.4" />
   </ItemGroup>

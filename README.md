@@ -28,6 +28,7 @@ The user interface is available in German and Russian.
 - Settings are remembered between sessions.
 - User interface in German and Russian. On the first start Wortlaut follows the Windows display language
   (Russian → Russian, otherwise German); the language can be switched at the bottom right of the window.
+- Built-in help in plain language (see [Help](#help)).
 - Ships as one self-contained `Wortlaut.exe` – no .NET installation needed.
 
 ## Requirements
@@ -162,6 +163,21 @@ run asks for confirmation and then cancels cleanly.
 If Wortlaut is killed during a run, a `.wortlaut-tmp` folder may remain. It is reported in the log the
 next time the folder is loaded; delete it by hand after checking it.
 
+### Help
+
+**? Hilfe** in the status bar or **F1** opens the help window: a list of topics on the left (what Wortlaut
+does and privacy, first steps, models, device, language, formats, whole folder, problems and solutions,
+uninstalling, licenses), the text on the right. F1 opens the topic of the focused setting or tab. The small
+**?** next to Modell, Gerät, Sprache, Format and Ganze Sätze explains the setting in one or two sentences
+when the mouse rests on it, and opens the matching topic when clicked.
+
+The help texts are plain Markdown files embedded into the exe:
+[`src/Wortlaut/Help/help.de.md`](src/Wortlaut/Help/help.de.md) and
+[`src/Wortlaut/Help/help.ru.md`](src/Wortlaut/Help/help.ru.md). Each topic starts with `# id | Title`;
+`##` subheadings, `-` and `1.` lists, `**bold**` and `` `code` `` are supported. Both files must contain the
+same topics in the same order, and the button names they mention must match the user interface – the unit
+tests check both.
+
 ### Settings file
 
 Settings are stored in `Wortlaut.settings.json` next to `Wortlaut.exe`. If that folder is not writable
@@ -190,7 +206,8 @@ src\Wortlaut\bin\Release\net10.0-windows\win-x64\publish\Wortlaut.exe
 Wortlaut.sln
 src/Wortlaut/
   Core/    UI-independent logic: settings, runner, transcription job, folder queue
-  UI/      WinForms: MainForm, one UserControl per tab, all texts in UiText
+  UI/      WinForms: MainForm, one UserControl per tab, all texts in UiText; UI/Wizard: welcome wizard
+  Help/    help texts (help.de.md, help.ru.md), embedded into the exe
 tests/Wortlaut.Tests/   xUnit tests for the core (a fake runner replaces faster-whisper)
 docs/MANUAL-TESTING.md  manual test plan
 ```

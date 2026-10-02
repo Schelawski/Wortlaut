@@ -80,7 +80,22 @@ Variant: in step 1 click **Ich habe Faster-Whisper-XXL schon…** and select an 
 | Set the device to `cuda` on a PC without an NVIDIA card (or simulate: start Wortlaut from a command prompt after `set CUDA_VISIBLE_DEVICES=-1`) and transcribe a file. | The log shows "Die Grafikkarte konnte nicht verwendet werden – keine passende NVIDIA-Grafikkarte gefunden" with the CUDA error line. A question offers to switch to `cpu`; **Ja** changes the device. |
 | Same with a folder of three files. | The run stops after the first file; the log says the remaining files were not processed. The question appears once. |
 
-## 7. Settings are remembered
+## 7. Help
+
+| Step | Expected |
+|------|----------|
+| Rest the mouse on the small **?** next to "Modell", "Gerät", "Sprache", "Format" and "Ganze Sätze". | A tooltip explains the setting in one or two sentences. |
+| Click the **?** next to "Gerät". | The help window opens at "Gerät: Grafikkarte oder Prozessor". |
+| Click into the language box and press **F1**. | The same help window switches to "Sprache" (no second window). |
+| Switch to the tab "Ganzer Ordner", click into the list, press **F1**. | Topic "Ganzer Ordner". |
+| Click **? Hilfe** in the status bar and go through all topics. | Ten topics; text, lists, bold words and paths are formatted and readable; nothing is cut off. |
+| Switch the UI language to Русский and open the help again. | All topics in Russian. |
+| In the welcome wizard (Extras → Einrichtungs-Assistent…), on step 2 press **F1**. | Topic "Probleme und Lösungen". |
+
+**Acceptance:** one person from the target group per language reads the help and answers:
+"Is it understandable without technical knowledge?"
+
+## 8. Settings are remembered
 
 | Step | Expected |
 |------|----------|

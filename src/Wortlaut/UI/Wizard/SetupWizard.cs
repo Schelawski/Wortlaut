@@ -327,6 +327,25 @@ internal sealed class SetupWizard : Form
         }
     }
 
+    /// <summary>F1 opens the help topic that fits the current page.</summary>
+    protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+    {
+        if (keyData == Keys.F1)
+        {
+            HelpForm.Open(this, _page?.Step switch
+            {
+                WizardStep.Install => Core.Help.HelpTopics.Problems,
+                WizardStep.Graphics => Core.Help.HelpTopics.Device,
+                WizardStep.Model => Core.Help.HelpTopics.Models,
+                WizardStep.Done => Core.Help.HelpTopics.FirstSteps,
+                _ => Core.Help.HelpTopics.About,
+            });
+            return true;
+        }
+
+        return base.ProcessCmdKey(ref msg, keyData);
+    }
+
     // ----- Closing -----
 
     protected override void OnFormClosing(FormClosingEventArgs e)

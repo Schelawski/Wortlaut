@@ -34,11 +34,32 @@ internal static class UiText
     public static string FormatLabel => L("Format", "Формат");
     public static string WholeSentences => L("Ganze Sätze", "Целые предложения");
 
+    // ----- Help -----
+
+    public static string HelpButton => L("Hilfe", "Справка");
+    public static string HelpTitle => L("Wortlaut – Hilfe", "Wortlaut – справка");
+    public static string HelpButtonTooltip => L("Hilfe öffnen (F1)", "Открыть справку (F1)");
+    public static string HelpClickForMore => L("Klicken Sie auf das „?“ für mehr.", "Нажмите «?», чтобы узнать больше.");
+
+    public static string HelpTipModel => L(
+        "Das „Gehirn“ der Spracherkennung. Größere Modelle sind genauer, aber langsamer. Für russische Vorträge empfehlen wir large-v2.",
+        "«Мозг» распознавания речи. Большие модели точнее, но медленнее. Для лекций на русском рекомендуем large-v2.");
+
+    public static string HelpTipDevice => L(
+        "cuda nutzt die NVIDIA-Grafikkarte und ist viel schneller. cpu nutzt den Prozessor: Das geht auf jedem Computer, dauert aber länger.",
+        "cuda использует видеокарту NVIDIA и работает намного быстрее. cpu использует процессор: работает на любом компьютере, но дольше.");
+
+    public static string HelpTipLanguage => L(
+        "Die Sprache, in der in der Aufnahme gesprochen wird. Eine feste Sprache ist zuverlässiger als „Automatisch erkennen“.",
+        "Язык, на котором говорят в записи. Конкретный язык надёжнее, чем «Определить автоматически».");
+
+    public static string HelpTipFormat => L(
+        "Text zum Lesen und Bearbeiten, Untertitel (.srt, .vtt) für Videos, JSON für Programme.",
+        "Текст – для чтения и редактирования, субтитры (.srt, .vtt) – для видео, JSON – для программ.");
+
     public static string WholeSentencesTooltip => L(
-        "Jedes Segment beginnt mit einem neuen Satz, Sätze werden nicht zerschnitten (--sentence).\n" +
-        "Wirkt bei Text, SRT und VTT. JSON behält die ursprünglichen Segmente von Whisper.",
-        "Каждый сегмент начинается с нового предложения, предложения не разрываются (--sentence).\n" +
-        "Действует для текста, SRT и VTT. В JSON остаются исходные сегменты Whisper.");
+        "Jeder Abschnitt beginnt mit einem neuen Satz, Sätze werden nicht geteilt. Beim Format Text steht ein Satz pro Zeile. Wirkt nicht bei JSON.",
+        "Каждый фрагмент начинается с нового предложения, предложения не разрываются. В формате «Текст» – одно предложение на строку. Не действует для JSON.");
 
     public static string ExeDialogTitle => L("faster-whisper-xxl.exe auswählen", "Выберите faster-whisper-xxl.exe");
 
