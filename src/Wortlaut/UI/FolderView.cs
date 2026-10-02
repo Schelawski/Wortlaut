@@ -459,6 +459,8 @@ internal sealed class FolderView : UserControl, IRunView
 
         _log.AppendLine(string.Empty);
         _log.AppendMessage(UiText.LogBulkStart(rows.Count));
+        if (Core.Models.WhisperModels.Find(settings.Model) is null)
+            _log.AppendMessage(UiText.LogUnknownModel(settings.Model));
 
         var items = rows.Select(row => new BulkItem(row.MediaPath, row.Duration)).ToList();
         var progress = new Progress<BulkUpdate>(update => OnBulkUpdate(rows, update));

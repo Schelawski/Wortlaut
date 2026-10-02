@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using Wortlaut.Core;
+using Wortlaut.Core.Models;
 using Wortlaut.Core.Setup;
 
 namespace Wortlaut.UI;
@@ -16,11 +17,12 @@ internal sealed partial class MainForm : Form, IViewHost
     private readonly TextBox _exePathBox = new() { Anchor = AnchorStyles.Left | AnchorStyles.Right };
     private readonly Button _browseExeButton = UiStyle.CreateButton(UiText.Browse);
     private readonly Button _setupButton = UiStyle.CreateButton(UiText.SetUp);
+    private readonly Button _modelsButton = UiStyle.CreateButton(UiText.ModelsButton);
     private readonly StatusBadge _exeStatus = new() { Anchor = AnchorStyles.Left, Margin = new Padding(6, 3, 3, 3) };
-    private readonly ComboBox _modelBox = new() { DropDownStyle = ComboBoxStyle.DropDown, Width = 150 };
+    private readonly ComboBox _modelBox = new() { DropDownStyle = ComboBoxStyle.DropDown, Width = 135 };
     private readonly ComboBox _deviceBox = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 90 };
-    private readonly ComboBox _languageBox = new() { DropDownStyle = ComboBoxStyle.DropDown, Width = 200 };
-    private readonly ComboBox _formatBox = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 160 };
+    private readonly ComboBox _languageBox = new() { DropDownStyle = ComboBoxStyle.DropDown, Width = 175 };
+    private readonly ComboBox _formatBox = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 140 };
     private readonly CheckBox _wholeSentencesBox = new() { Text = UiText.WholeSentences, AutoSize = true, Anchor = AnchorStyles.Left };
     private readonly ToolTip _toolTip = new() { AutoPopDelay = 15000 };
     private readonly GroupBox _settingsGroup = new()
@@ -205,32 +207,53 @@ internal sealed partial class MainForm : Form, IViewHost
         // Only shown while no faster-whisper-xxl.exe is found (see UpdateExeStatus).
         grid.Controls.Add(_setupButton, 3, 1);
 
-        var options = new TableLayoutPanel { AutoSize = true, ColumnCount = 5, RowCount = 2, Margin = new Padding(0, 4, 0, 0) };
-        for (var i = 0; i < 5; i++)
-            options.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        options.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        options.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-
-        (string Caption, ComboBox Box)[] fields =
-        [
-            (UiText.ModelLabel, _modelBox),
-            (UiText.DeviceLabel, _deviceBox),
-            (UiText.LanguageLabel, _languageBox),
-            (UiText.FormatLabel, _formatBox),
-        ];
-        for (var column = 0; column < fields.Length; column++)
+        // Fields wrap into a second line when the window (or a longer translation) leaves too little room,
+        // instead of squeezing the program path above.
+        var options = new FlowLayoutPanel { WrapContents = true, Anchor = AnchorStyles.Left | AnchorStyles.Right, Margin = new Padding(0, 4, 0, 0) };
+        // AutoSize would measure a single line; the height for the actual width is set here instead.
+        void FitHeight()
         {
-            options.Controls.Add(UiStyle.CreateCaption(fields[column].Caption), column, 0);
-            fields[column].Box.Margin = new Padding(3, 3, 12, 3);
-            options.Controls.Add(fields[column].Box, column, 1);
+            var height = options.GetPreferredSize(new Size(options.Width, 0)).Height;
+            if (options.Height != height)
+                options.Height = height;
         }
+        options.Resize += (_, _) => FitHeight();
+        options.ControlAdded += (_, _) => FitHeight();
 
+        // "Modelle…" right next to the model box.
+        var modelCell = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0) };
+        _modelBox.Margin = new Padding(3, 3, 3, 3);
+        _modelsButton.Margin = new Padding(0, 2, 3, 2);
+        _modelsButton.MinimumSize = new Size(0, 0);
+        _modelsButton.Padding = new Padding(6, 0, 6, 0);
+        modelCell.Controls.Add(_modelBox);
+        modelCell.Controls.Add(_modelsButton);
+
+        options.Controls.Add(Field(UiText.ModelLabel, modelCell));
+        options.Controls.Add(Field(UiText.DeviceLabel, _deviceBox));
+        options.Controls.Add(Field(UiText.LanguageLabel, _languageBox));
+        options.Controls.Add(Field(UiText.FormatLabel, _formatBox));
         // Next to the format, because it only affects some formats (see tooltip).
-        options.Controls.Add(_wholeSentencesBox, fields.Length, 1);
+        _wholeSentencesBox.Margin = new Padding(3, 6, 3, 3);
+        options.Controls.Add(Field(string.Empty, _wholeSentencesBox));
 
         grid.Controls.Add(options, 0, 2);
         grid.SetColumnSpan(options, 4);
         return grid;
+    }
+
+    /// <summary>A caption above a control, as one block of the settings line.</summary>
+    private static TableLayoutPanel Field(string caption, Control control)
+    {
+        var field = new TableLayoutPanel { AutoSize = true, ColumnCount = 1, RowCount = 2, Margin = new Padding(0, 0, 9, 0) };
+        field.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        field.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        var label = UiStyle.CreateCaption(caption.Length == 0 ? " " : caption);
+        field.Controls.Add(label, 0, 0);
+        if (control is ComboBox)
+            control.Margin = new Padding(3);
+        field.Controls.Add(control, 0, 1);
+        return field;
     }
 
     // ----- Settings -----
@@ -276,6 +299,7 @@ internal sealed partial class MainForm : Form, IViewHost
         UiStyle.MakePrimary(_setupButton);
         _setupButton.Margin = new Padding(9, 3, 3, 3);
         _setupButton.Click += (_, _) => RunSetup();
+        _modelsButton.Click += (_, _) => ShowModels(autoDownload: null);
         _modelBox.TextChanged += (_, _) =>
         {
             Settings.Model = _modelBox.Text.Trim();
@@ -351,6 +375,39 @@ internal sealed partial class MainForm : Form, IViewHost
         else
             _exeStatus.SetState(UiText.ExeNotFound, UiStyle.Danger);
         _setupButton.Visible = !found;
+        _modelsButton.Enabled = found; // the models live next to faster-whisper-xxl.exe
+    }
+
+    /// <summary>Opens the model overview; with <paramref name="autoDownload"/> it downloads that model right away.</summary>
+    /// <returns>True if the dialog was closed after the model became ready.</returns>
+    private bool ShowModels(string? autoDownload)
+    {
+        if (!FasterWhisperLocator.Exists(Settings.ExePath))
+            return false;
+
+        using var dialog = new ModelsDialog(Settings.ExePath.Trim(), autoDownload);
+        return dialog.ShowDialog(this) == DialogResult.OK;
+    }
+
+    /// <summary>
+    /// Makes sure a known model is downloaded before a transcription starts, so faster-whisper does not
+    /// silently download gigabytes while the UI shows no progress.
+    /// </summary>
+    private bool EnsureModelDownloaded(WhisperSettings settings)
+    {
+        if (WhisperModels.Find(settings.Model) is not { } model)
+            return true; // a name typed by the user: faster-whisper handles it (the view logs a hint)
+
+        if (WhisperModels.IsInstalled(WhisperModels.ModelsDirectory(settings.ExePath), model.Name))
+            return true;
+
+        if (MessageBox.Show(this, UiText.ModelMissingAsk(model.Name, model.ApproximateSize), UiText.AppTitle,
+                MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+        {
+            return false;
+        }
+
+        return ShowModels(model.Name) && WhisperModels.IsInstalled(WhisperModels.ModelsDirectory(settings.ExePath), model.Name);
     }
 
     /// <summary>Downloads and installs Faster-Whisper-XXL into %LOCALAPPDATA%\Wortlaut.</summary>
@@ -434,7 +491,8 @@ internal sealed partial class MainForm : Form, IViewHost
             return null;
         }
 
-        return Settings.ToWhisperSettings();
+        var settings = Settings.ToWhisperSettings();
+        return EnsureModelDownloaded(settings) ? settings : null;
     }
 
     public void ShowWarning(string message) =>

@@ -212,6 +212,8 @@ internal sealed class SingleFileView : UserControl, IRunView
     {
         _log.AppendLine(string.Empty);
         _log.AppendMessage(UiText.LogStartFile(mediaPath));
+        if (Core.Models.WhisperModels.Find(settings.Model) is null)
+            _log.AppendMessage(UiText.LogUnknownModel(settings.Model));
         SetState(UiText.StateStarting);
         _progressBar.Style = ProgressBarStyle.Marquee;
 

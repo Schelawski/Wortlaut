@@ -295,6 +295,58 @@ internal static class UiText
     public static string UnexpectedError(string message) =>
         L($"Unerwarteter Fehler: {message}", $"Непредвиденная ошибка: {message}");
 
+    // ----- Models -----
+
+    public static string ModelsButton => L("Modelle…", "Модели…");
+    public static string ModelsTitle => L("Modelle", "Модели");
+
+    public static string ModelsIntro => L(
+        "Das Modell ist das „Gehirn“ der Spracherkennung. Größere Modelle erkennen genauer, sind aber langsamer " +
+        "und brauchen mehr Platz. Jedes Modell wird nur einmal heruntergeladen.",
+        "Модель – это «мозг» распознавания речи. Большие модели распознают точнее, но работают медленнее " +
+        "и занимают больше места. Каждая модель загружается только один раз.");
+
+    public static string ModelColumnName => L("Modell", "Модель");
+    public static string ModelColumnSize => L("Größe", "Размер");
+    public static string ModelColumnStatus => L("Status", "Статус");
+    public static string ModelColumnHint => L("Hinweis", "Примечание");
+    public static string ModelInstalled => L("vorhanden", "загружена");
+    public static string ModelNotInstalled => L("nicht heruntergeladen", "не загружена");
+    public static string ModelPartial => L("teilweise heruntergeladen", "загружена частично");
+    public static string ModelDownload => L("Herunterladen", "Загрузить");
+    public static string ModelDelete => L("Löschen", "Удалить");
+    public static string Close => L("Schließen", "Закрыть");
+
+    public static string ModelHint(string name) => name switch
+    {
+        "large-v2" => L("sehr genau – empfohlen für Russisch", "очень точная – рекомендуется для русского"),
+        "large-v3" => L("sehr genau, erfindet in Pausen manchmal Text", "точная, но в паузах иногда придумывает текст"),
+        "large-v3-turbo" => L("fast so genau, deutlich schneller", "почти так же точна, но намного быстрее"),
+        "medium" => L("schneller, etwas ungenauer", "быстрее, но немного менее точна"),
+        "small" => L("sehr schnell, für einfache Aufnahmen", "очень быстрая, для простых записей"),
+        _ => string.Empty,
+    };
+
+    public static string ModelsFreeSpace(long free) => L($"Frei auf dem Laufwerk: {FormatSize(free)}", $"Свободно на диске: {FormatSize(free)}");
+
+    public static string ModelDeleteConfirm(string name, long size) => L(
+        $"Modell „{name}“ löschen? Dadurch werden {FormatSize(size)} frei. Es kann später erneut heruntergeladen werden.",
+        $"Удалить модель «{name}»? Освободится {FormatSize(size)}. Позже её можно загрузить снова.");
+
+    public static string ModelReady(string name) => L($"Modell „{name}“ ist bereit.", $"Модель «{name}» готова.");
+
+    public static string ModelMissingAsk(string name, long size) => L(
+        $"Das Modell „{name}“ ist noch nicht heruntergeladen (ca. {FormatSize(size)}). " +
+        "Es wird einmalig von Hugging Face geladen und danach immer wieder verwendet. Jetzt herunterladen?",
+        $"Модель «{name}» ещё не загружена (около {FormatSize(size)}). " +
+        "Она один раз загрузится с Hugging Face и затем будет использоваться всегда. Загрузить сейчас?");
+
+    public static string LogUnknownModel(string name) => L(
+        $"Hinweis: „{name}“ ist kein bekanntes Modell. Fehlt es, lädt faster-whisper es beim ersten Lauf selbst herunter – " +
+        "das kann eine Weile dauern, ohne dass ein Fortschritt angezeigt wird.",
+        $"Примечание: «{name}» – неизвестная модель. Если её нет, faster-whisper сам загрузит её при первом запуске – " +
+        "это может занять время без отображения прогресса.");
+
     // ----- Setup (download Faster-Whisper-XXL) -----
 
     public static string SetUp => L("Wortlaut einrichten", "Настроить Wortlaut");

@@ -64,6 +64,24 @@ The user interface is available in German and Russian.
    "Text" is plain text without timestamps (with "Ganze Sätze": one sentence per line). The status bar
    at the bottom shows the active settings, e.g. `large-v2 · cuda · ru · .txt`.
 
+### Models
+
+**Modelle…** next to the model box opens an overview of the models with size, status and a short hint.
+Models are downloaded from Hugging Face into the `_models` folder next to `faster-whisper-xxl.exe` (where
+Faster-Whisper-XXL looks for them) – with progress, cancel and resume – and can be deleted to free space.
+If the selected model is missing when a transcription starts, Wortlaut offers to download it first, so the
+first run does not silently download several gigabytes.
+
+| Model | Download | Source |
+|-------|----------|--------|
+| large-v2 | 2.9 GB | `Systran/faster-whisper-large-v2` |
+| large-v3 | 2.9 GB | `Systran/faster-whisper-large-v3` |
+| large-v3-turbo | 1.5 GB | `Purfview/faster-whisper-large-v3-turbo` |
+| medium | 1.4 GB | `Systran/faster-whisper-medium` |
+| small | 0.5 GB | `Systran/faster-whisper-small` |
+
+Model names typed by hand are passed to faster-whisper unchanged; it downloads them itself if needed.
+
 ### Tab "Einzelne Datei" (single file)
 
 1. Choose the file with **Datei wählen…** or drop it anywhere onto the window.
