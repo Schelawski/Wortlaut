@@ -512,3 +512,23 @@ internal sealed class FakeHttpHandler(Func<HttpRequestMessage, int, HttpResponse
         public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     }
 }
+
+public class KnownChecksumTests
+{
+    [Fact]
+    public void KnownPackageHasAChecksum()
+    {
+        Assert.Equal("237dee23939cdabfc96ef859fc5e584b842c3a5557e0d2ca744e1f87c14c5844", FasterWhisperReleaseFinder.KnownPackage.Sha256);
+    }
+
+    [Fact]
+    public void KnownChecksumIsUsedWhenGitHubHasNoDigest()
+    {
+        var package = FasterWhisperReleaseFinder.SelectLatest("""
+            { "assets": [ { "name": "Faster-Whisper-XXL_r245.4_windows.7z", "size": 1424256246,
+              "browser_download_url": "https://github.com/Purfview/whisper-standalone-win/releases/download/Faster-Whisper-XXL/Faster-Whisper-XXL_r245.4_windows.7z", "digest": null } ] }
+            """);
+
+        Assert.Equal(FasterWhisperReleaseFinder.KnownPackage.Sha256, package?.Sha256);
+    }
+}

@@ -23,13 +23,22 @@ public sealed partial class FasterWhisperReleaseFinder(HttpClient http)
 
     private static readonly TimeSpan ApiTimeout = TimeSpan.FromSeconds(15);
 
+    /// <summary>
+    /// SHA-256 of packages GitHub has no digest for (uploaded before mid-2025). Computed from the official download
+    /// on 2026-10-02 and confirmed with two tools; a changed or damaged file is then rejected.
+    /// </summary>
+    internal static IReadOnlyDictionary<string, string> KnownSha256 { get; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Faster-Whisper-XXL_r245.4_windows.7z"] = "237dee23939cdabfc96ef859fc5e584b842c3a5557e0d2ca744e1f87c14c5844",
+    };
+
     /// <summary>Used when the GitHub API cannot be reached (offline, rate limit). Checked on 2026-10-02.</summary>
     public static FasterWhisperPackage KnownPackage { get; } = new(
         "Faster-Whisper-XXL_r245.4_windows.7z",
         "r245.4",
         1_424_256_246,
         new Uri("https://github.com/Purfview/whisper-standalone-win/releases/download/Faster-Whisper-XXL/Faster-Whisper-XXL_r245.4_windows.7z"),
-        null);
+        "237dee23939cdabfc96ef859fc5e584b842c3a5557e0d2ca744e1f87c14c5844");
 
     [GeneratedRegex(@"^Faster-Whisper-XXL_r(?<version>\d+(?:\.\d+)*)_windows\.7z$", RegexOptions.IgnoreCase)]
     private static partial Regex WindowsPackageRegex();
@@ -88,7 +97,7 @@ public sealed partial class FasterWhisperReleaseFinder(HttpClient http)
             if (bestVersion is null || version > bestVersion)
             {
                 bestVersion = version;
-                best = new FasterWhisperPackage(name, label, size.GetInt64(), downloadUrl, ParseSha256(asset));
+                best = new FasterWhisperPackage(name, label, size.GetInt64(), downloadUrl, ParseSha256(asset) ?? KnownSha256.GetValueOrDefault(name));
             }
         }
 
