@@ -3,7 +3,7 @@ The Russian file help.ru.md must contain the same topics in the same order.
 
 # about | Was macht Wortlaut?
 
-Wortlaut schreibt auf, was in Video- und Audioaufnahmen gesprochen wird – zum Beispiel bei Vorträgen, Seminaren, Interviews oder Gesprächen. Aus einer Aufnahme wird eine Textdatei, die Sie lesen, durchsuchen, ausdrucken oder weiterbearbeiten können.
+Wortlaut schreibt auf, was in Video- und Audioaufnahmen gesprochen wird – zum Beispiel bei Vorträgen, Seminaren, Interviews oder Gesprächen. Aus einer Aufnahme wird eine Textdatei, die Sie lesen, durchsuchen, ausdrucken oder weiterbearbeiten können. **Wortlaut ist kostenlos** (siehe „Lizenzen und Danksagung“).
 
 ## Ihre Aufnahmen bleiben bei Ihnen
 
@@ -152,7 +152,11 @@ Ihre Aufnahmen und die erstellten Texte bleiben dabei unberührt.
 
 # licenses | Lizenzen und Danksagung
 
-Wortlaut ist freie Software unter der **GNU General Public License, Version 3**. Der Quelltext ist öffentlich: `github.com/Schelawski/Wortlaut`.
+© 2026 A. Schelawski. Wortlaut ist freie Software unter der **GNU General Public License, Version 3**. Der Quelltext ist öffentlich: `github.com/Schelawski/Wortlaut`.
+
+## Kostenlos – nur aus der offiziellen Quelle
+
+**Wortlaut ist kostenlos und bleibt es.** Die offizielle Quelle ist allein die Projektseite `github.com/Schelawski/Wortlaut`. Haben Sie für Wortlaut bezahlt, haben Sie für etwas bezahlt, das Sie dort kostenlos bekommen. Laden Sie Wortlaut nur von dort herunter: Kopien aus anderen Quellen können verändert sein.
 
 Wortlaut baut auf der Arbeit anderer auf. Herzlichen Dank an:
 

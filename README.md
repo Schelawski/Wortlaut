@@ -14,6 +14,10 @@ D:\Videos\Satsang 2026-09\Лекция 12 — Медитация и дыхани
 
 The user interface is available in German, English and Russian.
 
+> **Wortlaut is free of charge.** The only official source is this repository,
+> [github.com/Schelawski/Wortlaut](https://github.com/Schelawski/Wortlaut). If you paid for Wortlaut, you paid
+> for something you can get here for free – and copies from other sources may have been changed.
+
 ## Features
 
 - **Single file** – choose a file from any folder via dialog or drag & drop and transcribe it.
@@ -214,7 +218,7 @@ docs/MANUAL-TESTING.md  manual test plan
 
 ## License
 
-[GNU General Public License v3.0](LICENSE)
+© 2026 A. Schelawski – [GNU General Public License v3.0](LICENSE)
 
 Third-party components:
 - [Faster-Whisper-XXL](https://github.com/Purfview/whisper-standalone-win) (MIT) – downloaded from its official

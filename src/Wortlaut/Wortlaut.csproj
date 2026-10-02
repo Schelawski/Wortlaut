@@ -12,6 +12,9 @@
     <Product>Wortlaut</Product>
     <Description>Transcribes video and audio files with Faster-Whisper-XXL.</Description>
     <Version>1.0.0</Version>
+    <!-- Shown in the file properties of Wortlaut.exe (Details tab) -->
+    <Authors>A. Schelawski</Authors>
+    <Copyright>© 2026 A. Schelawski – free software (GPL-3.0), official source: github.com/Schelawski/Wortlaut</Copyright>
 
     <!-- WinForms application defaults (consumed by ApplicationConfiguration.Initialize) -->
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>

@@ -3,7 +3,7 @@ Same topics in the same order as help.de.md.
 
 # about | What does Wortlaut do?
 
-Wortlaut writes down what is said in video and audio recordings – for example in talks, seminars, interviews or conversations. A recording becomes a text file that you can read, search, print or edit.
+Wortlaut writes down what is said in video and audio recordings – for example in talks, seminars, interviews or conversations. A recording becomes a text file that you can read, search, print or edit. **Wortlaut is free of charge** (see “Licenses and thanks”).
 
 ## Your recordings stay with you
 
@@ -152,7 +152,11 @@ Your recordings and the created texts are not touched.
 
 # licenses | Licenses and thanks
 
-Wortlaut is free software under the **GNU General Public License, version 3**. The source code is public: `github.com/Schelawski/Wortlaut`.
+© 2026 A. Schelawski. Wortlaut is free software under the **GNU General Public License, version 3**. The source code is public: `github.com/Schelawski/Wortlaut`.
+
+## Free of charge – only from the official source
+
+**Wortlaut is free of charge and will stay so.** The only official source is the project page `github.com/Schelawski/Wortlaut`. If you paid for Wortlaut, you paid for something you can get there for free. Only download Wortlaut from there: copies from other sources may have been changed.
 
 Wortlaut builds on the work of others. Many thanks to:
 
