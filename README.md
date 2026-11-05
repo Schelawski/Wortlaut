@@ -24,8 +24,19 @@ always the newest version. No installation needed: start it, and the [welcome wi
 sets up everything else. All versions and their changes: [Releases](https://github.com/Schelawski/Wortlaut/releases).
 
 Each release also contains `Wortlaut.exe.sha256`. To check the download, run `Get-FileHash Wortlaut.exe` in
-PowerShell and compare the value. On the first start Windows may show “Windows protected your PC” – click
-“More info” → “Run anyway” (see the help topic “Problems and solutions”).
+PowerShell and compare the value.
+
+### If Windows blocks the start
+
+Wortlaut is not yet signed, so on the first start Windows may show “Windows protected your PC”
+(German: „Der Computer wurde durch Windows geschützt“):
+
+1. Click **More info** (Weitere Informationen) and then **Run anyway** (Trotzdem ausführen).
+2. If there is no **Run anyway** button – common on company computers – close the window, right-click
+   `Wortlaut.exe` → **Properties** (Eigenschaften) → tab **General** (Allgemein). At the bottom, next to
+   “Security” (Sicherheit), tick **Unblock** (Zulassen), click **OK** and start Wortlaut again.
+3. If that checkbox is missing too, the administrator of the computer has blocked unknown programs. On a
+   company computer, ask your IT department to allow Wortlaut.
 
 ## Features
 

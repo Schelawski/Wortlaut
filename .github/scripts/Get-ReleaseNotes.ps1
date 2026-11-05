@@ -37,12 +37,18 @@ if ($body.Length -eq 0) {
     throw "The section '## [$Version]' in CHANGELOG.md is empty."
 }
 
+# ASCII only: Windows PowerShell 5.1 reads this file without a BOM as ANSI.
 $footer = @'
 
 ---
 
-**Download:** `Wortlaut.exe` below – no installation needed, just start it. On the first start Wortlaut
+**Download:** `Wortlaut.exe` below - no installation needed, just start it. On the first start Wortlaut
 sets up everything else. Wortlaut is free of charge; this page is its only official source.
+
+**If Windows blocks the start** ("Windows protected your PC"): click "More info" > "Run anyway". Without
+a "Run anyway" button (common on company computers): right-click `Wortlaut.exe` > Properties > General >
+tick "Unblock" at the bottom > OK, then start it again. Details:
+[If Windows blocks the start](https://github.com/Schelawski/Wortlaut#if-windows-blocks-the-start).
 
 **Check the download (optional):** in PowerShell, `Get-FileHash Wortlaut.exe` must show the value from
 `Wortlaut.exe.sha256`.
