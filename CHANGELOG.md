@@ -7,7 +7,7 @@ All notable changes to Wortlaut. The section of a version becomes its release no
 
 ## [1.0.0]
 
-The first public version of Wortlaut – the successor of the in-house tool “AnandaVidyaHelper”.
+The first public version of Wortlaut.
 
 ### Transcribing
 - Transcribe a single video or audio file, or a whole folder (optionally with subfolders) one file after

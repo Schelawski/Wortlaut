@@ -1,8 +1,7 @@
 # Wortlaut
 
 Wortlaut is a small Windows desktop app that transcribes video and audio files with
-[Faster-Whisper-XXL](https://github.com/Purfview/whisper-standalone-win). It is the successor of
-the in-house tool "AnandaVidyaHelper".
+[Faster-Whisper-XXL](https://github.com/Purfview/whisper-standalone-win).
 
 Pick a file (or a whole folder), choose model, device, language and output format, and Wortlaut
 writes the transcript next to the media file under the same name:
